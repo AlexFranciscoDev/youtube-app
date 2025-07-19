@@ -5,6 +5,8 @@ const cors = require('cors');
 
 // Models
 const User = require('./models/User');
+const Video = require('./models/Video');
+const Category = require("./models/Category");
 
 // Controllers
 const UserController = require('./controllers/user');
@@ -22,7 +24,11 @@ app.use(cors());
 
 // Routes
 const UserRoutes = require('./routes/user');
+const VideoRoutes = require("./routes/video");
+const CategoryRoutes = require("./routes/category");
 app.use('/api/user', UserRoutes);
+app.use("/api/video", VideoRoutes);
+app.use("/api/category", CategoryRoutes);
 
 // Listen requests on the specified port
 app.listen(port, () => {

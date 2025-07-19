@@ -22,6 +22,7 @@ Representa a los usuarios registrados en la app.
 - **GET** `/api/users/me` – Obtener datos del usuario autenticado
 - **PUT** `/api/users/:id` – Actualizar perfil
 - **DELETE** `/api/users/:id` – Eliminar usuario
+- **GET** /api/users/:id/videos/count/ - Contar videos del usuario
 
 ---
 
@@ -32,6 +33,8 @@ Representa un video publicado por un usuario.
 ### Campos:
 - `_id`: ObjectId
 - `userId`: ObjectId (referencia al modelo User)
+- `imagen`: file
+- `platform`: String
 - `title`: String
 - `description`: String
 - `youtubeUrl`: String
@@ -56,6 +59,7 @@ Categorías para organizar los videos.
 
 ### Campos:
 - `_id`: ObjectId
+- `image`: File
 - `name`: String (ej: "Música", "Educación")
 - `description`: String
 
