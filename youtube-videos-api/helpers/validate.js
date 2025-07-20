@@ -20,7 +20,7 @@ const validate = (params) => {
 
     // ALL THIS VARIABLES RETURN A BOOLEAN VALUE
     // IF ALL OF THEM ARE TRUE, THEN THE FORM IS VALID
-    if (!username || !email || password) {
+    if (!username || !email || !password) {
         throw new Error("Validation failed: username, email or password is invalid");
     } else {
         console.log("User data is valid");

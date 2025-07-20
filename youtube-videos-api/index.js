@@ -22,6 +22,10 @@ const port = 3000;
 // Middleware to use CORS
 app.use(cors());
 
+// Middleware to parse JSON requests
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Routes
 const UserRoutes = require('./routes/user');
 const VideoRoutes = require("./routes/video");
