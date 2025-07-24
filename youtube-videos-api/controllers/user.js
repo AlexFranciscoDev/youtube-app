@@ -1,10 +1,11 @@
+const bcrypt = require('bcrypt');
 const validate = require("../helpers/validate");
 const User = require("../models/User");
 
 const test = (req, res) => {
-        return res.status(200).send({
-            message: 'This is a test function from UserController'
-        })
+    return res.status(200).send({
+        message: 'This is a test function from UserController'
+    })
 }
 
 // Register a new user
@@ -29,13 +30,13 @@ const register = (req, res) => {
         })
     }
     // Check if the user already exists
-    User.find({
+    User.exists({
         $or: [
-            {username: params.username},
-            {email: params.email}
+            { username: params.username },
+            { email: params.email }
         ]
-    }).then((users) => {
-        if (users.length > 0) {
+    }).then((exists) => {
+        if (exists) {
             return res.status(400).send({
                 status: 'Error',
                 message: 'User already exists with that username or email'
@@ -43,10 +44,36 @@ const register = (req, res) => {
         } else {
             // If everything is ok, create a new user.
             // Before saving, we should hash or encrypt the password
-            return res.status(200).send({
-            status: 'Success',
-            message: 'User registered successfully'
-        });
+            bcrypt.hash(params.password, 10, (error, hash) => {
+                if (error) {
+                    return res.status(500).send({
+                        status: 'Error',
+                        message: 'Error encrypting the password'
+                    })
+                } else {
+                    const user = new User({
+                        username: params.username,
+                        email: params.email,
+                        password: hash
+                    })
+                    user.save()
+                        .then((savedUser) => {
+                            return res.status(200).send({
+                                status: 'Success',
+                                message: 'User registered successfully',
+                                user: savedUser
+                            });
+                        })
+                        .catch((error) => {
+                            console.error("Error creating user:", error);
+                            return res.status(500).send({
+                                status: 'Error',
+                                message: "User can't be created due to an internal error."
+                            });
+                        });
+                }
+            })
+            
         }
     })
 
