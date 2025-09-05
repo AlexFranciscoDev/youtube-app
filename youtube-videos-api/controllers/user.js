@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const validate = require("../helpers/validate");
 const User = require("../models/User");
+const jwt = require('jwt');
 
 const test = (req, res) => {
     return res.status(200).send({
@@ -73,14 +74,48 @@ const register = (req, res) => {
                         });
                 }
             })
-            
+
         }
     })
 
 }
 
+const login = async (req, res) => {
+    // Receive data from the body of the peticion
+    const params = req.body;
+    // Verify that the data has been received
+    if (!params.username || !params.password) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'Missing parameters'
+        })
+    }
+    // Search for the user in the database
+    const user = await User.find({ username: params.username }).exec();
+    // Check if the user exists
+    if (user.length <= 0) return res.status(400).send({ status: 'Error', message: 'User or password not correct' })
+    // Compare passwords
+    let pwd = bcrypt.compareSync(params.password, user[0].password);
+    // Check if its correct
+    if (!pwd) {
+        return res.status(400).send({ status: 'Error', message: 'User or password not correct' })
+    } else {
+        const token = jwt.createToken(user);
+        return res.status(200).send({
+            status: 'Success',
+            message: 'User found',
+            user: user,
+            token
+        })
+    }
+    // Generate token
+    // Send response
+    return {}
+}
+
 
 module.exports = {
     test,
-    register
+    register,
+    login
 };
