@@ -1,13 +1,8 @@
 const bcrypt = require('bcrypt');
 const validate = require("../helpers/validate");
 const User = require("../models/User");
-const jwt = require('jwt');
+const jwt = require('../services/jwt');
 
-const test = (req, res) => {
-    return res.status(200).send({
-        message: 'This is a test function from UserController'
-    })
-}
 
 // Register a new user
 const register = (req, res) => {
@@ -84,22 +79,30 @@ const login = async (req, res) => {
     // Receive data from the body of the peticion
     const params = req.body;
     // Verify that the data has been received
-    if (!params.username || !params.password) {
+    if (!params.email || !params.password) {
         return res.status(400).send({
             status: 'Error',
             message: 'Missing parameters'
         })
     }
     // Search for the user in the database
-    const user = await User.find({ username: params.username }).exec();
-    // Check if the user exists
-    if (user.length <= 0) return res.status(400).send({ status: 'Error', message: 'User or password not correct' })
-    // Compare passwords
-    let pwd = bcrypt.compareSync(params.password, user[0].password);
-    // Check if its correct
-    if (!pwd) {
-        return res.status(400).send({ status: 'Error', message: 'User or password not correct' })
-    } else {
+    User.findOne(
+        {email: params.email}
+    )
+    .then((user) => {
+        if (user.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: 'User not found'
+            });
+        }
+        let pwd = bcrypt.compareSync(params.password, user.password);
+        if (!pwd) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'User password is not correct'
+            })
+        }
         const token = jwt.createToken(user);
         return res.status(200).send({
             status: 'Success',
@@ -107,15 +110,77 @@ const login = async (req, res) => {
             user: user,
             token
         })
-    }
-    // Generate token
-    // Send response
-    return {}
+    }).catch((error) => {
+        return res.status(404).send({
+            status: 'Error',
+            message: 'User not found',
+            error: error.message
+        })
+    })
+    //https://www.youtube.com/watch?v=TAI68Zlseq8
 }
 
+const profile = (req, res) => {
+    const userId = req.user;
+    // Receive user id
+    // Search for the user
+    console.log(userId);
+    User.findOne({ _id: userId })
+    .select({password: 0, __v: 0, role: 0})
+    .then((user) => {
+        return res.status(200).send({
+        status: "Success",
+        message: "User found",
+        user: user
+    })
+    })
+    .catch((error) => {
+        return res.status(404).send({
+            status: "Error",
+            message: "User not found",
+            error: error.message
+        })
+    })
+
+    // REVISAR PORQUE EL DE ARRIBA NO FUNCIONA Y EL DE ABAJO NO
+    /* 
+        let userId = req.user.id;
+    const params = req.params;
+
+    if (params.id) userId = params.id;
+
+    User.findOne({_id: userId})
+    .select({password: 0, __v: 0, role: 0})
+    .then((user) => {
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Showing profile data',
+            user
+        })
+    })
+    .catch((error) => {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'User not found',
+            error: error.message
+        })
+    })
+    */
+
+}
+
+const update = (req, res) => {
+    // Receive user from the url
+    const params = req.params;
+
+    return res.status(200).send({
+        message: "We are updating de user"
+    })
+}
 
 module.exports = {
-    test,
     register,
-    login
+    login,
+    profile,
+    update
 };
