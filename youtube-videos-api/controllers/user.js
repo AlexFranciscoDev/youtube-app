@@ -169,12 +169,55 @@ const profile = (req, res) => {
 
 }
 
-const update = (req, res) => {
+const update = async (req, res) => {
     // Receive user from the url
-    const params = req.params;
+    const userLogged = req.user;
+    // Receive the new parameters (only the name)
+    const params = req.body;
+    if (!params.username) {
+        return res.status(400).send({
+            status: "Error",
+            message: "No username specified"
+        })
+    } else {
+        // Check if the username is not already used.
+        User.findOne({username: params.username}).
+        exec()
+        .then(async userFound => {
+            if (userFound) {
+                return res.status(409).send({message: "Username already used"})
+            }
+            const updatedUser = await User.findOneAndUpdate({_id: userLogged.id}, {username: params.username}, {
+                new: true
+            });
+            res.status(200).send({
+                message: "User updated correctly",
+                user: updatedUser
+            })
+        })
+        .catch(err => {
+            return res.status(400).send({error: err.message, message: "An error ocurred"});
+        })
+    }
+}
 
-    return res.status(200).send({
-        message: "We are updating de user"
+const updatePassword = async (req, res) => {
+    // User logged
+    const user = req.user;
+    // Receive OLD and NEW password from the body
+    const currentPassword = req.body.currentPassword;
+    const newPassword = req.body.password;
+    // Search user in the database
+    const loggedUser = await User.find({_id: user.id});
+    // Check if the new password is received
+    if (!currentPassword || !newPassword) return res.status(400).send({status: "Error", message: "Parameters missing"})
+    // Compare current password
+    const match = bcrypt.compare(currentPassword, loggedUser[0].password)
+    // CORREGIR: REVISAR QUE LA CONTRASEÑA INTRODUCIDA Y LA ACTUAL COINCIDEN
+    match ? res.status(200).send({message: "it maches"}) : res.status(400).send({message: "it doesnt maches"})
+
+    res.status(200).send({
+        message: "updating password"
     })
 }
 
@@ -182,5 +225,6 @@ module.exports = {
     register,
     login,
     profile,
-    update
+    update,
+    updatePassword
 };
