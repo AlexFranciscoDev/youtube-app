@@ -87,36 +87,36 @@ const login = async (req, res) => {
     }
     // Search for the user in the database
     User.findOne(
-        {email: params.email}
+        { email: params.email }
     )
-    .then((user) => {
-        if (user.length === 0) {
+        .then((user) => {
+            if (user.length === 0) {
+                return res.status(404).send({
+                    status: 'Error',
+                    message: 'User not found'
+                });
+            }
+            let pwd = bcrypt.compareSync(params.password, user.password);
+            if (!pwd) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: 'User password is not correct'
+                })
+            }
+            const token = jwt.createToken(user);
+            return res.status(200).send({
+                status: 'Success',
+                message: 'User found',
+                user: user,
+                token
+            })
+        }).catch((error) => {
             return res.status(404).send({
                 status: 'Error',
-                message: 'User not found'
-            });
-        }
-        let pwd = bcrypt.compareSync(params.password, user.password);
-        if (!pwd) {
-            return res.status(400).send({
-                status: 'Error',
-                message: 'User password is not correct'
+                message: 'User not found',
+                error: error.message
             })
-        }
-        const token = jwt.createToken(user);
-        return res.status(200).send({
-            status: 'Success',
-            message: 'User found',
-            user: user,
-            token
         })
-    }).catch((error) => {
-        return res.status(404).send({
-            status: 'Error',
-            message: 'User not found',
-            error: error.message
-        })
-    })
     //https://www.youtube.com/watch?v=TAI68Zlseq8
 }
 
@@ -126,21 +126,21 @@ const profile = (req, res) => {
     // Search for the user
     console.log(userId);
     User.findOne({ _id: userId })
-    .select({password: 0, __v: 0, role: 0})
-    .then((user) => {
-        return res.status(200).send({
-        status: "Success",
-        message: "User found",
-        user: user
-    })
-    })
-    .catch((error) => {
-        return res.status(404).send({
-            status: "Error",
-            message: "User not found",
-            error: error.message
+        .select({ password: 0, __v: 0, role: 0 })
+        .then((user) => {
+            return res.status(200).send({
+                status: "Success",
+                message: "User found",
+                user: user
+            })
         })
-    })
+        .catch((error) => {
+            return res.status(404).send({
+                status: "Error",
+                message: "User not found",
+                error: error.message
+            })
+        })
 
     // REVISAR PORQUE EL DE ARRIBA NO FUNCIONA Y EL DE ABAJO NO
     /* 
@@ -181,50 +181,85 @@ const update = async (req, res) => {
         })
     } else {
         // Check if the username is not already used.
-        User.findOne({username: params.username}).
-        exec()
-        .then(async userFound => {
-            if (userFound) {
-                return res.status(409).send({message: "Username already used"})
-            }
-            const updatedUser = await User.findOneAndUpdate({_id: userLogged.id}, {username: params.username}, {
-                new: true
-            });
-            res.status(200).send({
-                message: "User updated correctly",
-                user: updatedUser
+        User.findOne({ username: params.username }).
+            exec()
+            .then(async userFound => {
+                if (userFound) {
+                    return res.status(409).send({ message: "Username already used" })
+                }
+                const updatedUser = await User.findOneAndUpdate({ _id: userLogged.id }, { username: params.username }, {
+                    new: true
+                });
+                res.status(200).send({
+                    message: "User updated correctly",
+                    user: updatedUser
+                })
             })
-        })
-        .catch(err => {
-            return res.status(400).send({error: err.message, message: "An error ocurred"});
-        })
+            .catch(err => {
+                return res.status(400).send({ error: err.message, message: "An error ocurred" });
+            })
     }
 }
 
 const updatePassword = async (req, res) => {
-    // User logged
     const user = req.user;
-    // Receive OLD and NEW password from the body
     const currentPassword = req.body.currentPassword;
     const newPassword = req.body.password;
-    // Search user in the database
-    const loggedUser = await User.find({_id: user.id});
-    // Check if the new password is received
-    if (!currentPassword || !newPassword) return res.status(400).send({status: "Error", message: "Parameters missing"})
-    // Compare current password
-    const match = bcrypt.compare(currentPassword, loggedUser[0].password)
-    // CORREGIR: REVISAR QUE LA CONTRASEÑA INTRODUCIDA Y LA ACTUAL COINCIDEN
-    match ? res.status(200).send({message: "it maches"}) : res.status(400).send({message: "it doesnt maches"})
 
-    res.status(200).send({
-        message: "updating password"
+    if (!currentPassword || !newPassword)
+        return res.status(400).send({ status: "Error", message: "Parameters missing" });
+
+    const loggedUser = await User.findOne({ _id: user.id });
+
+    const match = await bcrypt.compare(currentPassword, loggedUser.password);
+
+    if (!match)
+        return res.status(401).send({ status: 'Error', message: 'Incorrect current password' });
+
+    try {
+        const hash = await bcrypt.hash(newPassword, 10);
+        const updatedUser = await User.findOneAndUpdate(
+            { _id: user.id },
+            { password: hash },
+            { new: true }
+        );
+
+        return res.status(200).send({
+            message: "User updated correctly",
+            user: updatedUser
+        });
+    } catch (error) {
+        return res.status(500).send({
+            status: 'Error',
+            message: 'Error encrypting or updating the password'
+        });
+    }
+}
+
+const deleteUser = (req, res) => {
+    // Get user logged
+    // Check that the user exists in the database
+    /*
+        HACER ESTO MAS ADELANTE
+        Consideraciones que dejarías para cuando tengas modelos de vídeos/categorías:
+        Borrado en cascada o reasignación de vídeos, comentarios y metadatos.
+        Eliminación de archivos (avatares, videos) en almacenamiento externo.
+        Revocar tokens/sesiones y limpiar refresh tokens.
+        Operaciones en transacción para mantener consistencia.
+        Auditoría/logging y posible ventana de gracia para recuperación.
+    */
+    return res.status(200).send({
+        status: 200,
+        message: "DELETING USER"
     })
 }
+
 
 module.exports = {
     register,
     login,
     profile,
     update,
-    updatePassword
+    updatePassword,
+    deleteUser
 };
