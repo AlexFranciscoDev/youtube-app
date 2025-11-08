@@ -1,3 +1,4 @@
+// Dependencies
 const mongoose = require('mongoose');
 const { conection } = require('./database/conection');
 const express = require('express');
@@ -10,7 +11,6 @@ const Category = require("./models/Category");
 
 // Controllers
 const UserController = require('./controllers/user');
-
 
 // Conection to the database
 conection();
@@ -26,6 +26,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+app.use((err, req, res, next) => {
+  if (err) {
+    res.status(400).send(`Error: ${err.message}`);
+  } else {
+    next();
+  }
+})
+
 // Routes
 const UserRoutes = require('./routes/user');
 const VideoRoutes = require("./routes/video");
@@ -39,19 +48,4 @@ app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 })
 
-const UserTest = new User({
-  username: 'Bob',
-  email: 'bob@bob.es',
-  password: 'prueba'
-})
-
-// Routes 
-app.get('/', (req, res) => {
-  res.status(200).send({
-    nombre: 'Alex',
-    apellido: 'Francisco',
-    curso: 'Web Development',
-    user: UserTest
-  })
-}); 
 

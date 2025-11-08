@@ -6,8 +6,16 @@ const testCategory = (req, res) => {
 
 const newCategory = (req, res) => {
     // Get data from the body
-    const params = req.body;
-    console.log(params);
+    const body = req.body;
+    // Get image from the body
+    const file = req.file;
+    // Check that we receive all the data needed
+    if (!body.name || !body.description || !req.file) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'Parameters missing'
+        })
+    }
     return res.status(200).send({
         status: 'Success',
         message: 'New category'
