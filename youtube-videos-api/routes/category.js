@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const CategoryController = require("../controllers/category");
 const upload = require('../middlewares/upload');
+const auth = require("../middlewares/auth");
 
-router.get("/test", CategoryController.testCategory);
-//router.post('/new', upload.single('image'), CategoryController.newCategory);
-router.post('/new', CategoryController.newCategory);
+router.post('/new', auth.isAuth, upload.single('image'), CategoryController.newCategory);
+router.get("/", auth.isAuth, CategoryController.listCategories);
+router.get("/:id", auth.isAuth, CategoryController.getCategoryById);
 
 
 module.exports = router;
