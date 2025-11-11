@@ -1,4 +1,6 @@
 const Category = require('../models/Category');
+// Check if a objectId is valid
+var ObjectId = require('mongoose').Types.ObjectId;
 
 const newCategory = (req, res) => {
     // Get data from the body
@@ -57,12 +59,25 @@ const listCategories = (req, res) => {
 
 const getCategoryById = (req, res) => {
     const id = req.params.id;
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).send({
+            status: "Error",
+            message: "The id provided is not valid"
+        })
+    }
     // Get Category by id
     Category.findById(id).
         then((category) => {
+            console.log(category);
+            if (!category) {
+                return res.status(400).send({
+                    status: "Error",
+                    message: "Category not found"
+                })
+            }
             return res.status(200).send({
                 status: "Success",
-                message: "category by id",
+                message: "Category found",
                 category
             })
 
@@ -75,8 +90,40 @@ const getCategoryById = (req, res) => {
         })
 }
 
+const updateCategory = (req, res) => {
+    // Get id of the category
+    const id = req.params.id;
+    // Get data from the body
+    const body = req.body;
+    // Get file
+    const file = req.file;
+    // Find category and update data
+    Category.findOneAndUpdate(
+        { id: id },
+        {
+            name: body.name,
+            description: body.description,
+            image: file.originalname
+        },
+        { new: true }
+    ).then((category) => {
+            return res.status(200).send({
+                status: "Success",
+                message: "Category updated succesfully",
+                category
+            })
+        })
+        .catch((error) => {
+            return res.status(400).send({
+                status: "Error",
+                error: error
+            })
+        })
+}
+
 module.exports = {
     newCategory,
     listCategories,
-    getCategoryById
+    getCategoryById,
+    updateCategory
 }
