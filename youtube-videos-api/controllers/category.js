@@ -90,21 +90,23 @@ const getCategoryById = (req, res) => {
         })
 }
 
-const updateCategory = (req, res) => {
+const updateCategory = async (req, res) => {
     // Get id of the category
     const id = req.params.id;
     // Get data from the body
     const body = req.body;
     // Get file
     const file = req.file;
+    // Construsct object with the updated fields
+    const updatedFields = {};
+    if (body.name) updatedFields.name = body.name;
+    if (body.description) updatedFields.description = body.description;
+    if (file) updatedFields.image = file.originalname;
+
     // Find category and update data
-    Category.findOneAndUpdate(
-        { id: id },
-        {
-            name: body.name,
-            description: body.description,
-            image: file.originalname
-        },
+    await Category.findOneAndUpdate(
+        { _id: id },
+        updatedFields,
         { new: true }
     ).then((category) => {
             return res.status(200).send({
