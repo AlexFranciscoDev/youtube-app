@@ -1,5 +1,6 @@
 const express = require("express");
 const {Schema, model} = require("mongoose");
+const Video = require('./Video');
 
 const CategorySchema = new Schema({
     name: {
@@ -23,6 +24,14 @@ const CategorySchema = new Schema({
         default: Date.now
     }
 })
+
+// Middleware to delete on cascade if there's videos in that category
+CategorySchema.pre('findOneAndDelete', async function(next) {
+    const categoryId = this.getQuery()['_id']
+    await Video.deleteMany({ category: categoryId });
+    next();
+})
+
 
 /**
  * Campos y consideraciones recomendadas para Category:

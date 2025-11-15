@@ -8,6 +8,6 @@ router.post('/new', auth.isAuth, upload.single('image'), CategoryController.newC
 router.get("/", auth.isAuth, CategoryController.listCategories);
 router.get("/:id", auth.isAuth, CategoryController.getCategoryById);
 router.put("/:id", auth.isAuth, upload.single("image"), CategoryController.updateCategory);
-
+router.delete('/:id', auth.isAuth, CategoryController.deleteCategory);
 
 module.exports = router;

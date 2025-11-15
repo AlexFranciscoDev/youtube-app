@@ -123,9 +123,37 @@ const updateCategory = async (req, res) => {
         })
 }
 
+const deleteCategory = (req, res) => {
+    // Get category id
+    const id = req.params.id;
+    // Delete category by id
+    Category.findOneAndDelete({_id: id})
+    .then((categoryDeleted) => {
+        console.log(categoryDeleted);
+        if (!categoryDeleted) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'Category not found'
+            })
+        }
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Deleting category',
+            categoryDeleted
+        })
+    })
+    .catch((error) => {
+        return res.status(400).send({
+            status: 'Error',
+            error: error.message
+        })
+    })
+}
+
 module.exports = {
     newCategory,
     listCategories,
     getCategoryById,
-    updateCategory
+    updateCategory,
+    deleteCategory
 }
