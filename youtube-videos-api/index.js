@@ -1,31 +1,19 @@
 // Dependencies
-const mongoose = require('mongoose');
-const { conection } = require('./database/conection');
 const express = require('express');
 const cors = require('cors');
+const { conection } = require('./database/conection');
 
-// Models
-const User = require('./models/User');
-const Video = require('./models/Video');
-const Category = require("./models/Category");
+// Conexión a la base de datos (solo si no estamos en test)
+if (process.env.NODE_ENV !== "test") {
+  conection();
+}
 
-// Controllers
-const UserController = require('./controllers/user');
-
-// Conection to the database
-conection();
-
-// Create a server with express
 const app = express();
-const port = 3000;
 
-// Middleware to use CORS
+// Middleware
 app.use(cors());
-
-// Middleware to parse JSON requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 app.use((err, req, res, next) => {
   if (err) {
@@ -33,19 +21,12 @@ app.use((err, req, res, next) => {
   } else {
     next();
   }
-})
+});
 
-// Routes
-const UserRoutes = require('./routes/user');
-const VideoRoutes = require("./routes/video");
-const CategoryRoutes = require("./routes/category");
-app.use('/api/user', UserRoutes);
-app.use("/api/video", VideoRoutes);
-app.use("/api/category", CategoryRoutes);
+// Rutas
+app.use('/api/user', require('./routes/user'));
+app.use("/api/video", require("./routes/video"));
+app.use("/api/category", require("./routes/category"));
 
-// Listen requests on the specified port
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-})
-
-
+// Exportamos app para los tests
+module.exports = app;
