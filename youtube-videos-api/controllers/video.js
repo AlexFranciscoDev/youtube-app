@@ -50,10 +50,27 @@ const postVideo = async (req, res) => {
         })
     })
 
+}
 
-    
+const listVideos = (req, res) => {
+    Video.find({})
+    .then((videos) => {
+        return res.status(200).send({
+            status: "Success",
+            message: "Listing all the videos",
+            videos
+        })
+    })
+    .catch((error) => {
+        return res.status(400).send({
+            status: "Error",
+            message: "An error occured trying to get the videos",
+            error
+        })
+    })
 }
 
 module.exports = {
-    postVideo
+    postVideo,
+    listVideos
 }
