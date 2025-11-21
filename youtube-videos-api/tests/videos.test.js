@@ -65,7 +65,7 @@ describe("GET /api/videos", () => {
             .set("Authorization", token);
 
         // 3. Check the results
-        expect(res.statusCode).toBe(200);
+        expect(res.statusCode).toBe(200); //testing 
         expect(res.body.status).toBe("Success");
         expect(res.body.message).toBe("Listing all the videos");
         expect(res.body.videos.length).toBe(2);
