@@ -7,6 +7,14 @@ const jwtService = require("../services/jwt");
 
 let token;
 
+/* 
+------------------
+BEFORE ALL
+------------------
+* Connect to the database, in this case, the test database
+* Create a test USER
+* Create the token of the user so it can be authenticated
+*/
 beforeAll(async () => {
     await mongoose.connect("mongodb://127.0.0.1:27017/youtube-app-test");
 
@@ -19,6 +27,12 @@ beforeAll(async () => {
     token = jwtService.createToken(user);
 })
 
+/* 
+------------------
+AFTER EACH (después de cada test)
+------------------
+* Delete all collections
+*/
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {
@@ -26,7 +40,12 @@ afterEach(async () => {
   }
 });
 
-
+/* 
+------------------
+AFTER ALL (después de TODOS los test)
+------------------
+* Cerrar la conexión con la base de datos
+*/
 afterAll(async () => {
     await mongoose.connection.close();
 })
