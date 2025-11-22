@@ -34,10 +34,10 @@ AFTER EACH (después de cada test)
 * Delete all collections
 */
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    await collections[key].deleteMany({});
-  }
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+        await collections[key].deleteMany({});
+    }
 });
 
 /* 
@@ -85,8 +85,8 @@ describe("GET /api/videos", () => {
         ])
 
         const res = await request(app)
-        .get('/api/video/6920fd95efb67fafe65e17f0')
-        .set('Authorization', token)
+            .get('/api/video/6920fd95efb67fafe65e17f0')
+            .set('Authorization', token)
 
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
@@ -94,6 +94,38 @@ describe("GET /api/videos", () => {
         expect(typeof res.body.videoFound).toBe('object');
         expect(res.body.videoFound).toHaveProperty('title');
         expect(res.body.videoFound).toHaveProperty('_id');
-    }) 
+    })
+
+    /* Get videos by category */
+    test('Get videos by category', async () => {
+        // Create the temporal videos
+        await Video.create([
+            { title: "Video 1", description: "video description 1", url: "https://youtube.com/1", category: "690fa1dfdebd7b22beafb37e", platform: "Youtube", file: "adfasdfa.png" },
+            { title: "Video 2", description: "video description 2", url: "https://instagram.com/2", category: "690fa1dfdebd7b22beafb37e", platform: "Instagram", file: "adfasdfa.png" },
+            { title: "Video 3", description: "video description 3 which is different", url: "https://instagram.com/2", category: "690f94539f6c5dec5c29a0c6", platform: "Instagram", file: "adfasdfa.png" }
+        ])
+        // Category A
+        const res = await request(app)
+            .get('/api/video/category/690fa1dfdebd7b22beafb37e')
+            .set('Authorization', token)
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('Getting videos by category');
+        expect(typeof res.body.videosFound).toBe('object');
+        expect(res.body.videosFound).toHaveLength(2);
+        res.body.videosFound.forEach(video => {
+            expect(video).toHaveProperty('title');
+            expect(video).toHaveProperty('description');
+            expect(typeof video.title).toBe('string');
+        });
+
+        // Category B
+        const resB= await request(app)
+            .get('/api/video/category/690f94539f6c5dec5c29a0c6')
+            .set('Authorization', token)
+        
+        expect(resB.body.videosFound).toHaveLength(1);
+    })
 
 })
