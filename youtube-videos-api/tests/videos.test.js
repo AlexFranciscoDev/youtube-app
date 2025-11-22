@@ -77,6 +77,18 @@ describe("GET /api/videos", () => {
         expect(res.body.videos[0]).toHaveProperty("title");
     })
 
+    test('No videos found', async () => {
+        const res = await request(app)
+        .get('/api/video')
+        .set('Authorization', token)
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('Videos not found');
+    })
+})
+
+describe('GET /api/video/:id', () => {
     /*Test single video found */
     test('Get single video', async () => {
         // const fakeId = new mongoose.Types.ObjectId();
@@ -95,7 +107,9 @@ describe("GET /api/videos", () => {
         expect(res.body.videoFound).toHaveProperty('title');
         expect(res.body.videoFound).toHaveProperty('_id');
     })
+})
 
+describe('GET /api/video/category/:category', () => {
     /* Get videos by category */
     test('Get videos by category', async () => {
         // Create the temporal videos
@@ -124,8 +138,60 @@ describe("GET /api/videos", () => {
         const resB= await request(app)
             .get('/api/video/category/690f94539f6c5dec5c29a0c6')
             .set('Authorization', token)
-        
         expect(resB.body.videosFound).toHaveLength(1);
     })
-
 })
+
+
+describe('GET /api/video/platform/:platform', () => {
+    /* Get videos by platform */
+    test('Get videos by platform', async () => {
+        categoryA = new mongoose.Types.ObjectId();
+        await Video.create([
+            { title: "Video 1", description: "video description 1", url: "https://youtube.com/1", category: categoryA, platform: "Youtube", file: "adfasdfa.png" },
+            { title: "Video 2", description: "video description 2", url: "https://instagram.com/2", category: categoryA, platform: "Instagram", file: "adfasdfa.png" },
+            { title: "Video 4", description: "video description 4", url: "https://tiktok.com/2", category: categoryA, platform: "Instagram", file: "adfasdfa.png" }
+        ])
+
+        const resA = await request(app)
+        .get('/api/video/platform/Youtube')
+        .set('Authorization', token)
+
+        // Positives
+        expect(resA.statusCode).toBe(200);
+        expect(resA.body.status).toBe('Success');
+        expect(resA.body.message).toBe('Getting videos by platform');
+        expect(resA.body.videos).toHaveLength(1);
+        resA.body.videos.forEach((video) => {
+            expect(video).toHaveProperty('title');
+            expect(video).toHaveProperty('description');
+            expect(video).toHaveProperty('url');
+        })
+        
+    })
+
+    test('Videos not found from category', async () => {
+        const resB = await request(app)
+        .get('/api/video/platform/TikTok')
+        .set('Authorization', token)
+        // Videos not found from category
+        expect(resB.statusCode).toBe(404);
+        expect(resB.body.status).toBe('Error');
+        expect(resB.body.message).toBe(`No videos from platform TikTok`);
+    })
+
+    test('No platform found', async () => {
+        // No platform found
+        const resC = await request(app)
+        .get('/api/video/platform/')
+        .set('Authorization', token)
+        expect(resC.statusCode).toBe(400);
+    })
+})
+
+/*
+------------------------
+CREAR OBJECT ID INVENTADOS
+const categoryA = new mongoose.Types.ObjectId();
+------------------------
+*/

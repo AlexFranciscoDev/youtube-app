@@ -54,22 +54,27 @@ const postVideo = async (req, res) => {
 
 }
 
-const listVideos = (req, res) => {
-    Video.find({})
-    .then((videos) => {
+const listVideos = async (req, res) => {
+    try {
+        const videos = await Video.find({});
+        if (!videos || videos.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: 'Videos not found'
+            })
+        }
         return res.status(200).send({
             status: "Success",
             message: "Listing all the videos",
             videos
         })
-    })
-    .catch((error) => {
+    } catch (error) {
         return res.status(400).send({
             status: "Error",
             message: "An error occured trying to get the videos",
             error
         })
-    })
+    }
 }
 
 const getSingleVideo = (req, res) => {
@@ -139,9 +144,35 @@ const getVideosByCategory = async (req, res) => {
     })
 }
 
+const getVideosByPlatform = async (req, res) => {
+    const platform = req.params.platform;
+    try {
+        const videos = await Video.find({'platform': platform})
+
+        if (!videos || videos.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: `No videos from platform ${platform}`
+            })
+        }
+
+        return res.status(200).send({
+        status: 'Success',
+        message: 'Getting videos by platform',
+        videos
+    })
+    } catch (error) {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    }
+}
+
 module.exports = {
     postVideo,
     listVideos,
     getSingleVideo,
-    getVideosByCategory
+    getVideosByCategory,
+    getVideosByPlatform
 }
