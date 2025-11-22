@@ -6,5 +6,6 @@ const upload = require('../middlewares/upload');
 
 router.post('/', auth.isAuth, upload.single('image'), VideoController.postVideo);
 router.get("/", auth.isAuth, VideoController.listVideos);
+router.get('/:id', auth.isAuth, VideoController.getSingleVideo);
 
 module.exports = router;
