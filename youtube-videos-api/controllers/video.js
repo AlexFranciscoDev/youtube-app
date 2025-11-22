@@ -105,8 +105,43 @@ const getSingleVideo = (req, res) => {
     })
 }
 
+const getVideosByCategory = async (req, res) => {
+    const category = req.params.category;
+
+    if (!ObjectId.isValid(category)) {
+        return res.status(400).send({
+            status: "Error",
+            message: "The category id provided is not valid"
+        })
+    }
+    
+    await Video.find({category: category})
+    .then(videosFound => {
+
+        if (videosFound.length === 0) {
+            return res.status(400).send({
+            status: 'Error',
+            message: 'Videos from this category not found'
+        })
+        }
+
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Getting videos by category',
+            videosFound
+        })
+    })
+    .catch(error => {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    })
+}
+
 module.exports = {
     postVideo,
     listVideos,
-    getSingleVideo
+    getSingleVideo,
+    getVideosByCategory
 }
