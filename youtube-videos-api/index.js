@@ -28,5 +28,14 @@ app.use('/api/user', require('./routes/user'));
 app.use("/api/video", require("./routes/video"));
 app.use("/api/category", require("./routes/category"));
 
+// SOLO iniciar servidor si NO estamos en test
+if (process.env.NODE_ENV !== "test") {
+    const PORT = process.env.PORT || 3000;
+
+    app.listen(PORT, () => {
+        console.log("Servidor corriendo en el puerto", PORT);
+    });
+}
+
 // Exportamos app para los tests
 module.exports = app;

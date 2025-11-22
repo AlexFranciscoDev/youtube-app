@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Video = require("../models/Video");
 const Category = require("../models/Category");
 
+var ObjectId = require('mongoose').Types.ObjectId;
+
 const postVideo = async (req, res) => {
     // Get user id
     const userId = req.user.id;
@@ -70,7 +72,41 @@ const listVideos = (req, res) => {
     })
 }
 
+const getSingleVideo = (req, res) => {
+    const id = req.params.id;
+
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).send({
+            status: "Error",
+            message: "The id provided is not valid"
+        })
+    }
+    
+    Video.findById({_id: id})
+    .then(videoFound => {
+        if (!videoFound) {
+            return res.status(400).send({
+            status: 'Error',
+            message: 'Video not found'
+        })
+        }
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Video found',
+            videoFound
+        })
+    })
+    .catch(err => {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'Error trying to get the video',
+            err
+        })
+    })
+}
+
 module.exports = {
     postVideo,
-    listVideos
+    listVideos,
+    getSingleVideo
 }
