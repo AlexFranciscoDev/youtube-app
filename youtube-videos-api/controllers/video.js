@@ -79,7 +79,7 @@ const listVideos = async (req, res) => {
 
 const getSingleVideo = (req, res) => {
     const id = req.params.id;
-
+    
     if (!ObjectId.isValid(id)) {
         return res.status(400).send({
             status: "Error",
@@ -90,7 +90,7 @@ const getSingleVideo = (req, res) => {
     Video.findById({_id: id})
     .then(videoFound => {
         if (!videoFound) {
-            return res.status(400).send({
+            return res.status(404).send({
             status: 'Error',
             message: 'Video not found'
         })

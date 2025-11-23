@@ -79,8 +79,8 @@ describe("GET /api/videos", () => {
 
     test('No videos found', async () => {
         const res = await request(app)
-        .get('/api/video')
-        .set('Authorization', token)
+            .get('/api/video')
+            .set('Authorization', token)
 
         expect(res.statusCode).toBe(404);
         expect(res.body.status).toBe('Error');
@@ -106,6 +106,27 @@ describe('GET /api/video/:id', () => {
         expect(typeof res.body.videoFound).toBe('object');
         expect(res.body.videoFound).toHaveProperty('title');
         expect(res.body.videoFound).toHaveProperty('_id');
+    })
+
+    test('Video id is not valid', async () => {
+        const res = await request(app)
+            .get('/api/video/wd')
+            .set('Authorization', token)
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('The id provided is not valid');
+    })
+
+    test('Video not found', async () => {
+        const categoryTest = new mongoose.Types.ObjectId();
+        const res = await request(app)
+            .get(`/api/video/${categoryTest}`)
+            .set('Authorization', token)
+
+        expect(res.statusCode).toBe(404);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('Video not found');
     })
 })
 
@@ -135,7 +156,7 @@ describe('GET /api/video/category/:category', () => {
         });
 
         // Category B
-        const resB= await request(app)
+        const resB = await request(app)
             .get('/api/video/category/690f94539f6c5dec5c29a0c6')
             .set('Authorization', token)
         expect(resB.body.videosFound).toHaveLength(1);
@@ -154,8 +175,8 @@ describe('GET /api/video/platform/:platform', () => {
         ])
 
         const resA = await request(app)
-        .get('/api/video/platform/Youtube')
-        .set('Authorization', token)
+            .get('/api/video/platform/Youtube')
+            .set('Authorization', token)
 
         // Positives
         expect(resA.statusCode).toBe(200);
@@ -167,13 +188,13 @@ describe('GET /api/video/platform/:platform', () => {
             expect(video).toHaveProperty('description');
             expect(video).toHaveProperty('url');
         })
-        
+
     })
 
     test('Videos not found from category', async () => {
         const resB = await request(app)
-        .get('/api/video/platform/TikTok')
-        .set('Authorization', token)
+            .get('/api/video/platform/TikTok')
+            .set('Authorization', token)
         // Videos not found from category
         expect(resB.statusCode).toBe(404);
         expect(resB.body.status).toBe('Error');
@@ -183,8 +204,8 @@ describe('GET /api/video/platform/:platform', () => {
     test('No platform found', async () => {
         // No platform found
         const resC = await request(app)
-        .get('/api/video/platform/')
-        .set('Authorization', token)
+            .get('/api/video/platform/')
+            .set('Authorization', token)
         expect(resC.statusCode).toBe(400);
     })
 })
