@@ -103,9 +103,9 @@ describe('GET /api/video/:id', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('Video found');
-        expect(typeof res.body.videoFound).toBe('object');
-        expect(res.body.videoFound).toHaveProperty('title');
-        expect(res.body.videoFound).toHaveProperty('_id');
+        expect(typeof res.body.video).toBe('object');
+        expect(res.body.video).toHaveProperty('title');
+        expect(res.body.video).toHaveProperty('_id');
     })
 
     test('Video id is not valid', async () => {

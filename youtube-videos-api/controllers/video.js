@@ -77,7 +77,7 @@ const listVideos = async (req, res) => {
     }
 }
 
-const getSingleVideo = (req, res) => {
+const getSingleVideo = async (req, res) => {
     const id = req.params.id;
     
     if (!ObjectId.isValid(id)) {
@@ -87,27 +87,48 @@ const getSingleVideo = (req, res) => {
         })
     }
     
-    Video.findById({_id: id})
-    .then(videoFound => {
-        if (!videoFound) {
+    try {
+        const video = await Video.findById({_id: id});
+        if (!video || video.length === 0) {
             return res.status(404).send({
-            status: 'Error',
-            message: 'Video not found'
-        })
+                status: "Error",
+                message: "Video not found"
+            })
         }
         return res.status(200).send({
             status: 'Success',
             message: 'Video found',
-            videoFound
+            video
         })
-    })
-    .catch(err => {
+    } catch (error) {
         return res.status(400).send({
-            status: 'Error',
-            message: 'Error trying to get the video',
-            err
+            status: "Error",
+            message: "An error occured trying to get the video",
+            error
         })
-    })
+    }
+
+    // Video.findById({_id: id})
+    // .then(videoFound => {
+    //     if (!videoFound) {
+    //         return res.status(404).send({
+    //         status: 'Error',
+    //         message: 'Video not found'
+    //     })
+    //     }
+    //     return res.status(200).send({
+    //         status: 'Success',
+    //         message: 'Video found',
+    //         videoFound
+    //     })
+    // })
+    // .catch(err => {
+    //     return res.status(400).send({
+    //         status: 'Error',
+    //         message: 'Error trying to get the video',
+    //         err
+    //     })
+    // })
 }
 
 const getVideosByCategory = async (req, res) => {
