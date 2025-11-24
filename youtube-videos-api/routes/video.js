@@ -9,5 +9,6 @@ router.get("/", auth.isAuth, VideoController.listVideos);
 router.get('/:id', auth.isAuth, VideoController.getSingleVideo);
 router.get('/category/:category', auth.isAuth, VideoController.getVideosByCategory);
 router.get('/platform/:platform', auth.isAuth, VideoController.getVideosByPlatform);
+router.get('/user/:id', auth.isAuth, VideoController.getVideosByUser);
 
 module.exports = router;
