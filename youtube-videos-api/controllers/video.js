@@ -21,7 +21,7 @@ const postVideo = async (req, res) => {
     }
     // Check if the category introduced exists
     if (!mongoose.Types.ObjectId.isValid(body.category)) {
-        return res.status(400).send({
+         return res.status(400).send({
             status: "Error",
             message: "Category not found"
         })
@@ -39,19 +39,19 @@ const postVideo = async (req, res) => {
     })
 
     video.save()
-        .then((videoSaved) => {
-            return res.status(200).send({
-                status: 'Success',
-                message: 'New video created',
-                videoSaved
-            })
+    .then((videoSaved) => {
+        return res.status(200).send({
+            status: 'Success',
+            message: 'New video created',
+            videoSaved
         })
-        .catch((error) => {
-            return res.status(400).send({
-                status: 'Error',
-                error
-            })
+    })
+    .catch((error) => {
+        return res.status(400).send({
+            status: 'Error',
+            error
         })
+    })
 
 }
 
@@ -80,14 +80,14 @@ const listVideos = async (req, res) => {
 
 const getSingleVideo = async (req, res) => {
     const id = req.params.id;
-
+    
     if (!ObjectId.isValid(id)) {
         return res.status(400).send({
             status: "Error",
             message: "The id provided is not valid"
         })
     }
-
+    
     try {
         const video = await Video.findById({ _id: id });
         if (!video || video.length === 0) {
@@ -109,7 +109,7 @@ const getSingleVideo = async (req, res) => {
         })
     }
 
-
+    
 }
 
 const getVideosByCategory = async (req, res) => {
@@ -121,29 +121,29 @@ const getVideosByCategory = async (req, res) => {
             message: "The category id provided is not valid"
         })
     }
-
+    
     await Video.find({ category: category })
-        .then(videosFound => {
+    .then(videosFound => {
 
-            if (videosFound.length === 0) {
-                return res.status(400).send({
-                    status: 'Error',
-                    message: 'Videos from this category not found'
-                })
-            }
-
-            return res.status(200).send({
-                status: 'Success',
-                message: 'Getting videos by category',
-                videosFound
-            })
-        })
-        .catch(error => {
+        if (videosFound.length === 0) {
             return res.status(400).send({
-                status: 'Error',
-                error
-            })
+            status: 'Error',
+            message: 'Videos from this category not found'
         })
+        }
+
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Getting videos by category',
+            videosFound
+        })
+    })
+    .catch(error => {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    })
 }
 
 const getVideosByPlatform = async (req, res) => {
@@ -159,10 +159,10 @@ const getVideosByPlatform = async (req, res) => {
         }
 
         return res.status(200).send({
-            status: 'Success',
-            message: 'Getting videos by platform',
-            videos
-        })
+        status: 'Success',
+        message: 'Getting videos by platform',
+        videos
+    })
     } catch (error) {
         return res.status(400).send({
             status: 'Error',
@@ -173,7 +173,6 @@ const getVideosByPlatform = async (req, res) => {
 
 const getVideosByUser = async (req, res) => {
     let userId = req.params.id;
-    console.log("userId: ", userId);
     const loggedUserId = req.user.id;
     // If the user is not passed as a parameter, use the user id from the logged in user
     if (userId === "" || userId === undefined) {
@@ -211,8 +210,8 @@ const getVideosByUser = async (req, res) => {
             })
         }
 
-        return res.status(200).send({
-            status: 'Success',
+    return res.status(200).send({
+        status: 'Success',
             message: 'Getting videos by user',
             videos
         })
@@ -221,7 +220,7 @@ const getVideosByUser = async (req, res) => {
             status: "Error",
             message: "An error occured trying to get the videos",
             error: error.message
-        })
+    })
     }
 }
 
