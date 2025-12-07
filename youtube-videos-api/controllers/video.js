@@ -21,7 +21,7 @@ const postVideo = async (req, res) => {
     }
     // Check if the category introduced exists
     if (!mongoose.Types.ObjectId.isValid(body.category)) {
-         return res.status(400).send({
+        return res.status(400).send({
             status: "Error",
             message: "Category not found"
         })
@@ -39,19 +39,19 @@ const postVideo = async (req, res) => {
     })
 
     video.save()
-    .then((videoSaved) => {
-        return res.status(200).send({
-            status: 'Success',
-            message: 'New video created',
-            videoSaved
+        .then((videoSaved) => {
+            return res.status(200).send({
+                status: 'Success',
+                message: 'New video created',
+                videoSaved
+            })
         })
-    })
-    .catch((error) => {
-        return res.status(400).send({
-            status: 'Error',
-            error
+        .catch((error) => {
+            return res.status(400).send({
+                status: 'Error',
+                error
+            })
         })
-    })
 
 }
 
@@ -80,14 +80,14 @@ const listVideos = async (req, res) => {
 
 const getSingleVideo = async (req, res) => {
     const id = req.params.id;
-    
+
     if (!ObjectId.isValid(id)) {
         return res.status(400).send({
             status: "Error",
             message: "The id provided is not valid"
         })
     }
-    
+
     try {
         const video = await Video.findById({ _id: id });
         if (!video || video.length === 0) {
@@ -109,7 +109,7 @@ const getSingleVideo = async (req, res) => {
         })
     }
 
-    
+
 }
 
 const getVideosByCategory = async (req, res) => {
@@ -121,29 +121,29 @@ const getVideosByCategory = async (req, res) => {
             message: "The category id provided is not valid"
         })
     }
-    
+
     await Video.find({ category: category })
-    .then(videosFound => {
+        .then(videosFound => {
 
-        if (videosFound.length === 0) {
+            if (videosFound.length === 0) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: 'Videos from this category not found'
+                })
+            }
+
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Getting videos by category',
+                videosFound
+            })
+        })
+        .catch(error => {
             return res.status(400).send({
-            status: 'Error',
-            message: 'Videos from this category not found'
+                status: 'Error',
+                error
+            })
         })
-        }
-
-        return res.status(200).send({
-            status: 'Success',
-            message: 'Getting videos by category',
-            videosFound
-        })
-    })
-    .catch(error => {
-        return res.status(400).send({
-            status: 'Error',
-            error
-        })
-    })
 }
 
 const getVideosByPlatform = async (req, res) => {
@@ -159,10 +159,10 @@ const getVideosByPlatform = async (req, res) => {
         }
 
         return res.status(200).send({
-        status: 'Success',
-        message: 'Getting videos by platform',
-        videos
-    })
+            status: 'Success',
+            message: 'Getting videos by platform',
+            videos
+        })
     } catch (error) {
         return res.status(400).send({
             status: 'Error',
@@ -210,8 +210,8 @@ const getVideosByUser = async (req, res) => {
             })
         }
 
-    return res.status(200).send({
-        status: 'Success',
+        return res.status(200).send({
+            status: 'Success',
             message: 'Getting videos by user',
             videos
         })
@@ -220,9 +220,60 @@ const getVideosByUser = async (req, res) => {
             status: "Error",
             message: "An error occured trying to get the videos",
             error: error.message
-    })
+        })
     }
 }
+
+/**
+ * Filter videos by platform and category
+ */
+const getVideosByPlatformAndCategory = async (req, res) => {
+    // Check if we receive both platform and category
+    const { platform, category } = req.query;
+
+    if (!platform || !category) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'Missing paremeters'
+        })
+    }
+
+    // Check if categorie is valid id
+    if (!ObjectId.isValid(category)) {
+        return res.status(400).send({
+            status: "Error",
+            message: "The category id provided is not valid"
+        })
+    }
+
+    try {
+        const videos = await Video.find({
+            platform: platform,
+            category: category
+        })
+
+        if (!videos || videos.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: 'No videos found'
+            })
+        }
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Returning videos by platform and category',
+            videos
+        })
+    } catch (error) {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    }
+}
+
+/**
+ * editVideo
+ */
 
 module.exports = {
     postVideo,
@@ -230,5 +281,6 @@ module.exports = {
     getSingleVideo,
     getVideosByCategory,
     getVideosByPlatform,
-    getVideosByUser
+    getVideosByUser,
+    getVideosByPlatformAndCategory
 }
