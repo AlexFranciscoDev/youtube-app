@@ -238,11 +238,11 @@ const getVideosByPlatformAndCategory = async (req, res) => {
         })
     }
 
-    // Check if platform and categories are valid id
-    if (!ObjectId.isValid(platform) && !ObjectId.isValid(category)) {
+    // Check if categorie is valid id
+    if (!ObjectId.isValid(category)) {
         return res.status(400).send({
             status: "Error",
-            message: "The platform id or category id provided are not valid"
+            message: "The category id provided is not valid"
         })
     }
 
@@ -270,6 +270,10 @@ const getVideosByPlatformAndCategory = async (req, res) => {
         })
     }
 }
+
+/**
+ * editVideo
+ */
 
 module.exports = {
     postVideo,

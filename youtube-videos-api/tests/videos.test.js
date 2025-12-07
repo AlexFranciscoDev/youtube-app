@@ -89,6 +89,11 @@ describe("GET /api/videos", () => {
     })
 })
 
+/* 
+------------------
+GET SINGLE VIDEO TEST
+------------------
+*/
 describe('GET /api/video/:id', () => {
     /*Test single video found */
     test('Get single video', async () => {
@@ -131,6 +136,11 @@ describe('GET /api/video/:id', () => {
     })
 })
 
+/* 
+------------------
+GET VIDEOS BY CATEGORY TEST
+------------------
+*/
 describe('GET /api/video/category/:category', () => {
     /* Get videos by category */
     test('Get videos by category', async () => {
@@ -164,7 +174,11 @@ describe('GET /api/video/category/:category', () => {
     })
 })
 
-
+/* 
+------------------
+GET VIDEOS BY PLATFORM TEST
+------------------
+*/
 describe('GET /api/video/platform/:platform', () => {
     /* Get videos by platform */
     test('Get videos by platform', async () => {
@@ -211,6 +225,12 @@ describe('GET /api/video/platform/:platform', () => {
     })
 })
 
+
+/* 
+------------------
+GET VIDEOS BY USER TEST
+------------------
+*/
 describe("GET /api/video/user/:id", () => {
     test("Check if the user id is not valid", async () => {
         const resA = await request(app)
@@ -264,6 +284,7 @@ describe("GET /api/video/user/:id", () => {
         })
     })
 
+    // Test: If no user is passed, the user id from the token is used
     test("Find videos but no user is passed", async () => {
         const categoryA = new mongoose.Types.ObjectId();
         
@@ -293,6 +314,52 @@ describe("GET /api/video/user/:id", () => {
             expect(video).toHaveProperty("title");
             expect(video).toHaveProperty("description");
         })
+    })
+})
+
+/* 
+------------------
+GET VIDEOS BY PLATFORM AND CATEGORY TEST
+------------------
+*/
+describe('GET /api/video/platform/:platform/category/:category', () => {
+    /* Get videos by platform and category */
+    test('Check if the platform and category are provided', async () => {
+        /* NEGATIVE: No platform and category are provided */
+        const categoryA = new mongoose.Types.ObjectId();
+        const platformA = "Instagram";
+        const resA = await request (app)
+        .get("/api/video/filter")
+        .set("Authorization", token)
+        expect(resA.statusCode).toBe(400);
+        expect(resA.body.status).toBe("Error");
+        expect(resA.body.message).toBe("Missing paremeters");
+
+        /* Category missing */
+        const resB = await request (app)
+        .get("/api/video/filter?platform=Instagram")
+        .set("Authorization", token)
+        expect(resB.statusCode).toBe(400);
+        expect(resB.body.status).toBe("Error");
+        expect(resB.body.message).toBe("Missing paremeters");
+
+        /* Platform missing */
+        const resC = await request (app)
+        .get("/api/video/filter?category=690fa1dfdebd7b22beafb37e")
+        .set("Authorization", token)
+        expect(resC.statusCode).toBe(400);
+        expect(resC.body.status).toBe("Error");
+        expect(resC.body.message).toBe("Missing paremeters");
+    })
+
+    test('Check if the category is valid', async () => {
+        const categoryA = new mongoose.Types.ObjectId();
+        const resA = await request (app)
+        .get(`/api/video/filter?platform=Instagram&category=565676776`)
+        .set("Authorization", token)
+        expect(resA.statusCode).toBe(400);
+        expect(resA.body.status).toBe("Error");
+        expect(resA.body.message).toBe("The category id provided is not valid");
     })
 })
 
