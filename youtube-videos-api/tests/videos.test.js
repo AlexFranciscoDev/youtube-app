@@ -326,8 +326,6 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
     /* Get videos by platform and category */
     test('Check if the platform and category are provided', async () => {
         /* NEGATIVE: No platform and category are provided */
-        const categoryA = new mongoose.Types.ObjectId();
-        const platformA = "Instagram";
         const resA = await request (app)
         .get("/api/video/filter")
         .set("Authorization", token)
@@ -361,11 +359,53 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
         expect(resA.body.status).toBe("Error");
         expect(resA.body.message).toBe("The category id provided is not valid");
     })
-})
 
-/*
-------------------------
-CREAR OBJECT ID INVENTADOS
-const categoryA = new mongoose.Types.ObjectId();
-------------------------
-*/
+
+
+    // POSITIVES
+    test('Get videos by platform and category', async () => {
+        const categoryTest = new mongoose.Types.ObjectId();
+        const videos = await Video.create([
+            { title: "Video 1", description: "video description 1", url: "https://youtube.com/1", category: categoryTest, platform: "Youtube", file: "adfasdfa.png" },
+            { title: "Video 2", description: "video description 2", url: "https://instagram.com/2", category: categoryTest, platform: "Instagram", file: "adfasdfa.png" },
+            { title: "Video 4", description: "video description 4", url: "https://tiktok.com/2", category: categoryTest, platform: "Youtube", file: "adfasdfa.png" }
+        ])
+        // Get videos from youtube
+        const resA = await request(app)
+        .get(`/api/video/filter?category=${categoryTest}&platform=Youtube`)
+        .set("Authorization", token)
+
+        expect(resA.statusCode).toBe(200);  
+        expect(resA.body.status).toBe("Success");
+        expect(resA.body.message).toBe('Returning videos by platform and category');
+        expect(resA.body.videos).toHaveLength(2);
+        resA.body.videos.forEach(video => {
+            expect(video).toHaveProperty('title');
+            expect(video).toHaveProperty('description');
+            expect(video).toHaveProperty('url');
+        })
+
+        // Get videos from instagram
+        const resB = await request(app)
+        .get(`/api/video/filter?category=${categoryTest}&platform=Instagram`)
+        .set("Authorization", token)
+        expect(resB.statusCode).toBe(200);
+        expect(resB.body.status).toBe("Success");
+        expect(resB.body.message).toBe('Returning videos by platform and category');
+        expect(resB.body.videos).toHaveLength(1);
+        resB.body.videos.forEach(video => {
+            expect(video).toHaveProperty('title');
+            expect(video).toHaveProperty('description');
+            expect(video).toHaveProperty('url');
+        })
+    })
+
+    test('No videos found from category and platform', async () => {
+        const resA = await request(app)
+        .get(`/api/video/filter?category=690fa1dfdebd7b22beafb37e&platform=Youtube`)
+        .set('Authorization', token)
+        expect(resA.statusCode).toBe(404);
+        expect(resA.body.status).toBe("Error");
+        expect(resA.body.message).toBe("No videos found");
+    })
+})
