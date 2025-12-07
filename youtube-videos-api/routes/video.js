@@ -12,5 +12,6 @@ router.get('/platform/:platform', auth.isAuth, VideoController.getVideosByPlatfo
 router.get('/user/:id', auth.isAuth, VideoController.getVideosByUser);
 router.get('/user', auth.isAuth, VideoController.getVideosByUser);
 router.get('/:id', auth.isAuth, VideoController.getSingleVideo);
+router.put('/:id', auth.isAuth, VideoController.editVideo);
 
 module.exports = router;

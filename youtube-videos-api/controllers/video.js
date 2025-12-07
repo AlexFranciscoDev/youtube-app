@@ -274,6 +274,43 @@ const getVideosByPlatformAndCategory = async (req, res) => {
 /**
  * editVideo
  */
+const editVideo = async (req, res) => {
+    // Get id of the video
+    const id = req.params.id;
+    // Get user id from authenticated user
+    const userId = req.user.id;
+    // Construct objects with the parameters from the body
+    //const body = {}
+    // Check if the id is valid
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'The id provided is not valid',
+        })
+    }
+    // REVIEW!!!!!! Check that the video is from the user logged
+    // Check if the video exists
+    const videoToUpdate = await Video.findById(id);
+    
+    try {
+        if (!videoToUpdate || videoToUpdate.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: 'No video found'
+            })
+        }
+
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Video found'
+        })
+    }  catch (error) {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    }
+}
 
 module.exports = {
     postVideo,
@@ -282,5 +319,6 @@ module.exports = {
     getVideosByCategory,
     getVideosByPlatform,
     getVideosByUser,
-    getVideosByPlatformAndCategory
+    getVideosByPlatformAndCategory,
+    editVideo
 }
