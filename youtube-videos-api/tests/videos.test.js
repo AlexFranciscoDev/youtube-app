@@ -256,7 +256,7 @@ describe("GET /api/video/user/:id", () => {
     test("Find videos by user id", async () => {
         const userTest = new mongoose.Types.ObjectId();
         const categoryA = new mongoose.Types.ObjectId();
-        
+
         // Create the user in the database first
         await User.create({
             _id: userTest,
@@ -264,15 +264,15 @@ describe("GET /api/video/user/:id", () => {
             email: "test2@test.com",
             password: "123456"
         });
-        
+
         await Video.create([
             { user: userTest, title: "Video 1", description: "video description 1", url: "https://youtube.com/1", category: categoryA, platform: "Youtube", file: "adfasdfa.png" },
             { user: userTest, title: "Video 2", description: "video description 2", url: "https://instagram.com/2", category: categoryA, platform: "Instagram", file: "adfasdfa.png" }
-            ])
-        
+        ])
+
         const resC = await request(app)
-        .get(`/api/video/user/${userTest}`)
-        .set("Authorization", token)
+            .get(`/api/video/user/${userTest}`)
+            .set("Authorization", token)
 
         expect(resC.statusCode).toBe(200);
         expect(resC.body.status).toBe("Success")
@@ -287,7 +287,7 @@ describe("GET /api/video/user/:id", () => {
     // Test: If no user is passed, the user id from the token is used
     test("Find videos but no user is passed", async () => {
         const categoryA = new mongoose.Types.ObjectId();
-        
+
         // Recreate the user that was deleted in afterEach
         // This user ID matches the one in the token created in beforeAll()
         await User.create({
@@ -296,15 +296,15 @@ describe("GET /api/video/user/:id", () => {
             email: "test@test.com",
             password: "123456"
         });
-        
+
         await Video.create([
             { user: "6920fd95efb67fafe65e17f0", title: "Video 1", description: "video description 1", url: "https://youtube.com/1", category: categoryA, platform: "Youtube", file: "adfasdfa.png" },
             { user: "6920fd95efb67fafe65e17f0", title: "Video 2", description: "video description 2", url: "https://instagram.com/2", category: categoryA, platform: "Instagram", file: "adfasdfa.png" }
-            ])
-        
+        ])
+
         const resD = await request(app)
-        .get("/api/video/user")
-        .set("Authorization", token)
+            .get("/api/video/user")
+            .set("Authorization", token)
 
         expect(resD.statusCode).toBe(200);
         expect(resD.body.status).toBe("Success")
@@ -326,25 +326,25 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
     /* Get videos by platform and category */
     test('Check if the platform and category are provided', async () => {
         /* NEGATIVE: No platform and category are provided */
-        const resA = await request (app)
-        .get("/api/video/filter")
-        .set("Authorization", token)
+        const resA = await request(app)
+            .get("/api/video/filter")
+            .set("Authorization", token)
         expect(resA.statusCode).toBe(400);
         expect(resA.body.status).toBe("Error");
         expect(resA.body.message).toBe("Missing paremeters");
 
         /* Category missing */
-        const resB = await request (app)
-        .get("/api/video/filter?platform=Instagram")
-        .set("Authorization", token)
+        const resB = await request(app)
+            .get("/api/video/filter?platform=Instagram")
+            .set("Authorization", token)
         expect(resB.statusCode).toBe(400);
         expect(resB.body.status).toBe("Error");
         expect(resB.body.message).toBe("Missing paremeters");
 
         /* Platform missing */
-        const resC = await request (app)
-        .get("/api/video/filter?category=690fa1dfdebd7b22beafb37e")
-        .set("Authorization", token)
+        const resC = await request(app)
+            .get("/api/video/filter?category=690fa1dfdebd7b22beafb37e")
+            .set("Authorization", token)
         expect(resC.statusCode).toBe(400);
         expect(resC.body.status).toBe("Error");
         expect(resC.body.message).toBe("Missing paremeters");
@@ -352,9 +352,9 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
 
     test('Check if the category is valid', async () => {
         const categoryA = new mongoose.Types.ObjectId();
-        const resA = await request (app)
-        .get(`/api/video/filter?platform=Instagram&category=565676776`)
-        .set("Authorization", token)
+        const resA = await request(app)
+            .get(`/api/video/filter?platform=Instagram&category=565676776`)
+            .set("Authorization", token)
         expect(resA.statusCode).toBe(400);
         expect(resA.body.status).toBe("Error");
         expect(resA.body.message).toBe("The category id provided is not valid");
@@ -372,10 +372,10 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
         ])
         // Get videos from youtube
         const resA = await request(app)
-        .get(`/api/video/filter?category=${categoryTest}&platform=Youtube`)
-        .set("Authorization", token)
+            .get(`/api/video/filter?category=${categoryTest}&platform=Youtube`)
+            .set("Authorization", token)
 
-        expect(resA.statusCode).toBe(200);  
+        expect(resA.statusCode).toBe(200);
         expect(resA.body.status).toBe("Success");
         expect(resA.body.message).toBe('Returning videos by platform and category');
         expect(resA.body.videos).toHaveLength(2);
@@ -387,8 +387,8 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
 
         // Get videos from instagram
         const resB = await request(app)
-        .get(`/api/video/filter?category=${categoryTest}&platform=Instagram`)
-        .set("Authorization", token)
+            .get(`/api/video/filter?category=${categoryTest}&platform=Instagram`)
+            .set("Authorization", token)
         expect(resB.statusCode).toBe(200);
         expect(resB.body.status).toBe("Success");
         expect(resB.body.message).toBe('Returning videos by platform and category');
@@ -402,10 +402,104 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
 
     test('No videos found from category and platform', async () => {
         const resA = await request(app)
-        .get(`/api/video/filter?category=690fa1dfdebd7b22beafb37e&platform=Youtube`)
-        .set('Authorization', token)
+            .get(`/api/video/filter?category=690fa1dfdebd7b22beafb37e&platform=Youtube`)
+            .set('Authorization', token)
         expect(resA.statusCode).toBe(404);
         expect(resA.body.status).toBe("Error");
         expect(resA.body.message).toBe("No videos found");
+    })
+})
+
+describe('PUT /api/video/:id', () => {
+    const video = new Video({
+        _id: '6920fd95efb67fafe65e17f2',
+        user: '66892682986i9',
+        title: 'Video prueba',
+        description: 'Video prueba',
+        category: '66892682986i9',
+        platform: 'Youtube',
+        image: 'asdfasdfasdf'
+    })
+
+    test('Check that the body is filled', async () => {
+        const res = await request(app)
+            .put('/api/video/:id')
+            .set('Authorization', token)
+            .send({})
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('No fields to update provided');
+    })
+
+    test('Check if the video exists', async () => {
+        const resA = await request(app)
+            .put('/api/video/6920fd95efb67fafe65e17f1')
+            .set('Authorization', token)
+            .send({ title: 'prueba' })
+
+        expect(resA.statusCode).toBe(404);
+        expect(resA.body.status).toBe('Error');
+        expect(resA.body.message).toBe('No video found');
+    })
+
+    test('Check that the video is from the user logged', async () => {
+        // user loggued: 6920fd95efb67fafe65e17f0
+        // Create a video from a different user
+        const otherUserId = new mongoose.Types.ObjectId();
+        const categoryId = new mongoose.Types.ObjectId();
+        const videoId = new mongoose.Types.ObjectId();
+        
+        // Create the video in the database
+        await Video.create({
+            _id: videoId,
+            user: otherUserId, // Different user from the logged one
+            title: 'This is a video from another user',
+            description: 'Description of video from another user',
+            url: 'asdfasdfasdfasfasdf',
+            category: categoryId,
+            platform: 'Youtube',
+            image: 'asdfasdfasdf'
+        });
+        
+        const res = await request(app)
+            .put(`/api/video/${videoId}`)
+            .set('Authorization', token)
+            .send({ title: 'Prueba' })
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('You are not allowed to edit this post');
+    })
+
+    test('Edit video successfully', async () => {
+        const videoId = new mongoose.Types.ObjectId();
+        const categoryId = new mongoose.Types.ObjectId();
+        // Use the logged user ID from beforeAll: 6920fd95efb67fafe65e17f0
+        const loggedUserId = "6920fd95efb67fafe65e17f0";
+
+        const videoTest = await Video.create({
+            _id: videoId,
+            user: loggedUserId, // Use the logged user ID so the edit is allowed
+            title: 'Video test',
+            description: 'Video description',
+            url: 'asdjfasfjasldkfjasd',
+            category: categoryId,
+            platform: 'TikTok',
+            image: 'image.jpg'
+        })
+        
+        const res = await request(app)
+        .put(`/api/video/${videoTest._id}`)
+        .set('Authorization', token)
+        .send({
+            title: 'This is the new title',
+            description: 'This is the new description'
+        })
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('Video edited successfully');
+        expect(res.body.video.title).toBe('This is the new title');
+        expect(res.body.video.description).toBe('This is the new description');
     })
 })
