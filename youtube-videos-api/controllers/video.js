@@ -274,6 +274,80 @@ const getVideosByPlatformAndCategory = async (req, res) => {
 /**
  * editVideo
  */
+const editVideo = async (req, res) => {
+    // Get id of the video
+    const id = req.params.id;
+    // Get user id from authenticated user
+    const userId = req.user.id;
+    // Image file
+    const file = req.file;
+    // Construct object with only the parameters that are provided in the body
+    const body = {};
+    
+    if (req.body.title !== undefined) body.title = req.body.title;
+    if (req.body.description !== undefined) body.description = req.body.description;
+    if (req.body.url !== undefined) body.url = req.body.url;
+    if (req.body.category !== undefined) body.category = req.body.category;
+    if (req.body.platform !== undefined) body.platform = req.body.platform;
+    if (file !== undefined && file !== null) body.image = file.originalname;
+    // Check if at least one field is provided to update
+    if (Object.keys(body).length === 0) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'No fields to update provided'
+        })
+    }
+    
+    // Check if the id is valid
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).send({
+            status: 'Error',
+            message: 'The id provided is not valid',
+        })
+    }
+    // Check if the video exists
+    const videoToUpdate = await Video.findById(id);
+    
+    try {
+        if (!videoToUpdate || videoToUpdate.length === 0) {
+            return res.status(404).send({
+                status: 'Error',
+                message: 'No video found'
+            })
+        }
+        // Check that the video is from the user logged
+        if (videoToUpdate.user != userId) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'You are not allowed to edit this post'
+            })
+        }
+        
+        // Update the updatedAt field
+        body.updatedAt = new Date();
+        
+        // Edit video and get the updated version
+        const updatedVideo = await Video.findOneAndUpdate(
+            {_id: id}, 
+            { $set: body }, 
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+        
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Video edited successfully',
+            video: updatedVideo
+        })
+    }  catch (error) {
+        return res.status(400).send({
+            status: 'Error',
+            error
+        })
+    }
+}
 
 module.exports = {
     postVideo,
@@ -282,5 +356,6 @@ module.exports = {
     getVideosByCategory,
     getVideosByPlatform,
     getVideosByUser,
-    getVideosByPlatformAndCategory
+    getVideosByPlatformAndCategory,
+    editVideo
 }
