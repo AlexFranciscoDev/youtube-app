@@ -349,6 +349,38 @@ const editVideo = async (req, res) => {
     }
 }
 
+const deleteVideo = () => {
+    /**
+     * 1. Crear el método en el controlador (controllers/video.js)
+1.1. Definir la función deleteVideo:
+Obtener userId del usuario autenticado (req.user.id)
+Obtener id de req.params.id (borrado único)
+Obtener ids de req.body.ids (borrado múltiple, array)
+1.2. Detectar si es borrado múltiple:
+Si ids existe, es array y tiene elementos → borrado múltiple
+Si no → borrado único
+1.3. Para borrado múltiple:
+Validar que todos los IDs sean ObjectIds válidos
+Buscar los videos con Video.find({ _id: { $in: ids } })
+Verificar que existan
+Verificar que todos pertenezcan al usuario logueado
+Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
+Responder con el número de videos borrados
+1.4. Para borrado único:
+Validar que el ID sea válido
+Buscar el video con Video.findById(id)
+Verificar que exista
+Verificar que pertenezca al usuario logueado
+Borrar con Video.findByIdAndDelete(id)
+Responder con el video borrado
+1.5. Manejo de errores:
+Usar try/catch
+Respuestas apropiadas según el caso (400, 404, 200)
+1.6. Exportar el método:
+Agregar deleteVideo al module.exports
+     */
+}
+
 module.exports = {
     postVideo,
     listVideos,
