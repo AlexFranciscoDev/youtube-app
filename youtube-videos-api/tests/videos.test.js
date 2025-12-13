@@ -503,3 +503,18 @@ describe('PUT /api/video/:id', () => {
         expect(res.body.video.description).toBe('This is the new description');
     })
 })
+
+describe("DELETE /api/video/:id o /api/video/bulk", () => {
+    /*
+    3.1. Para borrado múltiple:
+Array de IDs no vacío
+Todos los IDs válidos (ObjectId)
+Videos existentes
+Todos pertenecen al usuario
+3.2. Para borrado único:
+ID presente
+ID válido (ObjectId)
+Video existe
+Video pertenece al usuario
+    */ 
+})

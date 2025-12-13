@@ -349,23 +349,39 @@ const editVideo = async (req, res) => {
     }
 }
 
-const deleteVideo = () => {
+const deleteVideo = async (req, res) => {
+    const userId = req.user.id;
+    const videoId = req.params.id;
+    const idsBody = req.body.ids;
+    console.log(idsBody);
+    // Check if it's single DELETE or multiple DELETE
+    // 1.2. Detectar si es borrado múltiple:
+    // Si no → borrado único
+    if (idsBody && Array.isArray(idsBody) && idsBody.length > 0) {
+        // Validar que todos los IDs sean ObjectIds válidos
+        idsBody.forEach((id) => {
+            if (!Object.isValid(id)) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: `The id ${id} is not a valid ObjectId`
+                })
+            }
+        })
+        // Buscar los videos con Video.find({ _id: { $in: ids } })
+        // Verificar que existan
+        // Verificar que todos pertenezcan al usuario logueado
+        // Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
+        // Responder con el número de videos borrados
+    } else {
+        // If not, SINGLE DELETE
+    }
+    return res.status(200).send({
+        status: 'Success',
+        message: 'Deleting video'
+    })
     /**
      * 1. Crear el método en el controlador (controllers/video.js)
-1.1. Definir la función deleteVideo:
-Obtener userId del usuario autenticado (req.user.id)
-Obtener id de req.params.id (borrado único)
-Obtener ids de req.body.ids (borrado múltiple, array)
-1.2. Detectar si es borrado múltiple:
-Si ids existe, es array y tiene elementos → borrado múltiple
-Si no → borrado único
 1.3. Para borrado múltiple:
-Validar que todos los IDs sean ObjectIds válidos
-Buscar los videos con Video.find({ _id: { $in: ids } })
-Verificar que existan
-Verificar que todos pertenezcan al usuario logueado
-Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
-Responder con el número de videos borrados
 1.4. Para borrado único:
 Validar que el ID sea válido
 Buscar el video con Video.findById(id)
@@ -389,5 +405,6 @@ module.exports = {
     getVideosByPlatform,
     getVideosByUser,
     getVideosByPlatformAndCategory,
-    editVideo
+    editVideo,
+    deleteVideo
 }
