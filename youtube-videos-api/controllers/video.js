@@ -353,14 +353,11 @@ const deleteVideo = async (req, res) => {
     const userId = req.user.id;
     const videoId = req.params.id;
     const idsBody = req.body.ids;
-    console.log(idsBody);
     // Check if it's single DELETE or multiple DELETE
-    // 1.2. Detectar si es borrado múltiple:
-    // Si no → borrado único
     if (idsBody && Array.isArray(idsBody) && idsBody.length > 0) {
-        // Validar que todos los IDs sean ObjectIds válidos
+        // Validate that all IDs are valid ObjectIds
         idsBody.forEach((id) => {
-            if (!Object.isValid(id)) {
+            if (!ObjectId.isValid(id)) {
                 return res.status(400).send({
                     status: 'Error',
                     message: `The id ${id} is not a valid ObjectId`
@@ -368,9 +365,38 @@ const deleteVideo = async (req, res) => {
             }
         })
         // Buscar los videos con Video.find({ _id: { $in: ids } })
-        // Verificar que existan
-        // Verificar que todos pertenezcan al usuario logueado
-        // Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
+        const videos = await Video.find({_id: {$in: idsBody}})
+        try {
+            // Verificar que existan
+            if (!videos || videos.length === 0) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: 'No videos found'
+                })
+            }
+            // Verificar que todos pertenezcan al usuario logueado
+            videos.forEach((video) => {
+                if (video.user != userId) {
+                    return res.status(403).send({
+                        status: 'Error',
+                        message: 'You are not allowed to delete this video'
+                    })
+                }
+            })
+            // Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
+            const deletedVideos = await Video.deleteMany({_id: {$in: idsBody}, user: userId});
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Deleting multiple videos',
+                deletedVideos
+            })
+        } catch (error) {
+            return res.status(400).send({
+                status: 'Error',
+                error
+            })
+        }
+
         // Responder con el número de videos borrados
     } else {
         // If not, SINGLE DELETE
