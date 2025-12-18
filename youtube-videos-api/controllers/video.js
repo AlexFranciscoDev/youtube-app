@@ -352,7 +352,7 @@ const editVideo = async (req, res) => {
 const deleteVideo = async (req, res) => {
     const userId = req.user.id;
     const videoId = req.params.id;
-    const idsBody = req.body.ids;
+    const idsBody = req.body && req.body.ids;
     // Check if it's single DELETE or multiple DELETE
     if (idsBody && Array.isArray(idsBody) && idsBody.length > 0) {
         // Validate that all IDs are valid ObjectIds
@@ -364,17 +364,17 @@ const deleteVideo = async (req, res) => {
                 })
             }
         })
-        // Buscar los videos con Video.find({ _id: { $in: ids } })
+        // Search the videos
         const videos = await Video.find({_id: {$in: idsBody}})
         try {
-            // Verificar que existan
+            // Verify that the videos exists
             if (!videos || videos.length === 0) {
                 return res.status(400).send({
                     status: 'Error',
                     message: 'No videos found'
                 })
             }
-            // Verificar que todos pertenezcan al usuario logueado
+            // Verify that the videos belong to the user logged
             videos.forEach((video) => {
                 if (video.user != userId) {
                     return res.status(403).send({
@@ -383,8 +383,9 @@ const deleteVideo = async (req, res) => {
                     })
                 }
             })
-            // Borrar con Video.deleteMany({ _id: { $in: ids }, user: userId })
+            // Delete many videos
             const deletedVideos = await Video.deleteMany({_id: {$in: idsBody}, user: userId});
+            // Responder con el número de videos borrados
             return res.status(200).send({
                 status: 'Success',
                 message: 'Deleting multiple videos',
@@ -396,30 +397,49 @@ const deleteVideo = async (req, res) => {
                 error
             })
         }
-
-        // Responder con el número de videos borrados
     } else {
-        // If not, SINGLE DELETE
+        // If not, SINGLE DELETE using the id from URL params
+        // Check if videoId exists (it won't exist in /bulk route)
+        if (!videoId) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'Video ID is required'
+            })
+        }
+        // 1. Validate that the video ID in the URL param is a valid ObjectId
+        if (!ObjectId.isValid(videoId)) {
+            return res.status(400).send({
+                status: 'Error',
+                message: `The id ${videoId} is not a valid ObjectId`
+            })
+        }
+        // 2. Search the video with Video.findById(videoId)
+        const video = Video.findById(videoId);
+        // 3. Verify that the video exists
+        try {
+            if (!video || video.length === 0) {
+                return res.status(400).send({
+                    status: "Error",
+                    message: "Video not found" 
+                })
+            }
+        } catch (error) {
+            return res.status(400).send({
+                status: "Error",
+                error
+            })
+        }
+        // 4. Check the video belongs to the logged user
+        // 5. Delete using Video.findByIdAndDelete(videoId)
+        // 6. Respond with deleted video info (or appropriate error)
+        // 7. Handle errors using try/catch; respond 400 for invalid, 404 not found, 403 not allowed, 200 on success
+        return res.status(200).send({
+            status: 'Success',
+            message: 'Deleting single video'
+        })
     }
-    return res.status(200).send({
-        status: 'Success',
-        message: 'Deleting video'
-    })
     /**
      * 1. Crear el método en el controlador (controllers/video.js)
-1.3. Para borrado múltiple:
-1.4. Para borrado único:
-Validar que el ID sea válido
-Buscar el video con Video.findById(id)
-Verificar que exista
-Verificar que pertenezca al usuario logueado
-Borrar con Video.findByIdAndDelete(id)
-Responder con el video borrado
-1.5. Manejo de errores:
-Usar try/catch
-Respuestas apropiadas según el caso (400, 404, 200)
-1.6. Exportar el método:
-Agregar deleteVideo al module.exports
      */
 }
 
