@@ -449,7 +449,7 @@ describe('PUT /api/video/:id', () => {
         const otherUserId = new mongoose.Types.ObjectId();
         const categoryId = new mongoose.Types.ObjectId();
         const videoId = new mongoose.Types.ObjectId();
-        
+
         // Create the video in the database
         await Video.create({
             _id: videoId,
@@ -461,7 +461,7 @@ describe('PUT /api/video/:id', () => {
             platform: 'Youtube',
             image: 'asdfasdfasdf'
         });
-        
+
         const res = await request(app)
             .put(`/api/video/${videoId}`)
             .set('Authorization', token)
@@ -488,14 +488,14 @@ describe('PUT /api/video/:id', () => {
             platform: 'TikTok',
             image: 'image.jpg'
         })
-        
+
         const res = await request(app)
-        .put(`/api/video/${videoTest._id}`)
-        .set('Authorization', token)
-        .send({
-            title: 'This is the new title',
-            description: 'This is the new description'
-        })
+            .put(`/api/video/${videoTest._id}`)
+            .set('Authorization', token)
+            .send({
+                title: 'This is the new title',
+                description: 'This is the new description'
+            })
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('Video edited successfully');
@@ -504,8 +504,40 @@ describe('PUT /api/video/:id', () => {
     })
 })
 
-describe("DELETE /api/video/:id o /api/video/bulk", () => {
-    
+// Delete multiple videos
+describe("DELETE /api/video/bulk", () => {
+    test('Check that ids passed are ObjectIds valid', async () => {
+        const ids = [
+            'dqwdqw',
+            'qwdqwd',
+            'qwf'
+        ]
+        const res = await request(app)
+            .delete('/api/video/bulk')
+            .set('Authorization', token)
+            .send({
+                ids: ids
+            })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toContain('not a valid ObjectId')
+    })
+    test('Check videos passed exists', async () => {
+        const videoId1 = new mongoose.Types.ObjectId();
+        const videoId2 = new mongoose.Types.ObjectId();
+        const res = await request(app)
+        .delete('/api/video/bulk')
+        .set('Authorization', token)
+        .send({
+            ids: [
+                videoId1,
+                videoId2
+            ]
+        })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('No videos found')
+    })
     /*
     3.1. Para borrado múltiple:
 Array de IDs no vacío
@@ -517,5 +549,5 @@ ID presente
 ID válido (ObjectId)
 Video existe
 Video pertenece al usuario
-    */ 
+    */
 })
