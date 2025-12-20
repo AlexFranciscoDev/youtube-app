@@ -385,7 +385,6 @@ const deleteVideo = async (req, res) => {
             })
             // Delete many videos
             const deletedVideos = await Video.deleteMany({_id: {$in: idsBody}, user: userId});
-            // Responder con el número de videos borrados
             return res.status(200).send({
                 status: 'Success',
                 message: 'Deleting multiple videos',
@@ -406,16 +405,17 @@ const deleteVideo = async (req, res) => {
                 message: 'Video ID is required'
             })
         }
-        // 1. Validate that the video ID in the URL param is a valid ObjectId
+        // Validate that the video ID in the URL param is a valid ObjectId
         if (!ObjectId.isValid(videoId)) {
             return res.status(400).send({
                 status: 'Error',
                 message: `The id ${videoId} is not a valid ObjectId`
             })
         }
-        // 2. Search the video with Video.findById(videoId)
-        const video = Video.findById(videoId);
-        // 3. Verify that the video exists
+        // Search the video with Video.findById(videoId)
+        const video = await Video.findById(videoId);
+        console.log(`video not found: ${video}`);
+        // Verify that the video exists
         try {
             if (!video || video.length === 0) {
                 return res.status(400).send({
@@ -429,18 +429,29 @@ const deleteVideo = async (req, res) => {
                 error
             })
         }
-        // 4. Check the video belongs to the logged user
-        // 5. Delete using Video.findByIdAndDelete(videoId)
-        // 6. Respond with deleted video info (or appropriate error)
-        // 7. Handle errors using try/catch; respond 400 for invalid, 404 not found, 403 not allowed, 200 on success
-        return res.status(200).send({
-            status: 'Success',
-            message: 'Deleting single video'
-        })
+        // Check the video belongs to the logged user
+        if (video.user != userId) {
+            return res.status(403).send({
+                status: 'Error',
+                message: 'You are not allowed to delete this video'
+            })
+        }
+        // Delete using Video.findByIdAndDelete(videoId)
+        try {
+            const deletedVideo = await Video.findByIdAndDelete(videoId);
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Deleting single video',
+                deletedVideo
+            })
+            // Respond with deleted video info (or appropriate error)
+        } catch (error) {
+            return res.status(400).send({
+                status: 'Error',
+                error
+            })
+        }
     }
-    /**
-     * 1. Crear el método en el controlador (controllers/video.js)
-     */
 }
 
 module.exports = {
