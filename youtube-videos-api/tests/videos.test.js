@@ -6,6 +6,7 @@ const Video = require("../models/Video");
 const jwtService = require("../services/jwt");
 
 let token;
+let userId;
 
 /* 
 ------------------
@@ -26,6 +27,7 @@ beforeAll(async () => {
     });
 
     token = jwtService.createToken(user);
+    userId = user._id;
 })
 
 /* 
@@ -449,7 +451,7 @@ describe('PUT /api/video/:id', () => {
         const otherUserId = new mongoose.Types.ObjectId();
         const categoryId = new mongoose.Types.ObjectId();
         const videoId = new mongoose.Types.ObjectId();
-        
+
         // Create the video in the database
         await Video.create({
             _id: videoId,
@@ -461,7 +463,7 @@ describe('PUT /api/video/:id', () => {
             platform: 'Youtube',
             image: 'asdfasdfasdf'
         });
-        
+
         const res = await request(app)
             .put(`/api/video/${videoId}`)
             .set('Authorization', token)
@@ -488,18 +490,209 @@ describe('PUT /api/video/:id', () => {
             platform: 'TikTok',
             image: 'image.jpg'
         })
-        
+
         const res = await request(app)
-        .put(`/api/video/${videoTest._id}`)
-        .set('Authorization', token)
-        .send({
-            title: 'This is the new title',
-            description: 'This is the new description'
-        })
+            .put(`/api/video/${videoTest._id}`)
+            .set('Authorization', token)
+            .send({
+                title: 'This is the new title',
+                description: 'This is the new description'
+            })
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('Video edited successfully');
         expect(res.body.video.title).toBe('This is the new title');
         expect(res.body.video.description).toBe('This is the new description');
+    })
+})
+
+// Delete multiple videos
+describe("DELETE /api/video/bulk", () => {
+    // TESTS MULTIPLE VIDEOS
+    test('Check that ids passed are ObjectIds valid', async () => {
+        const ids = [
+            'dqwdqw',
+            'qwdqwd',
+            'qwf'
+        ]
+        const res = await request(app)
+            .delete('/api/video/bulk')
+            .set('Authorization', token)
+            .send({
+                ids: ids
+            })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toContain('not a valid ObjectId')
+    })
+    test('Check videos passed exists', async () => {
+        const videoId1 = new mongoose.Types.ObjectId();
+        const videoId2 = new mongoose.Types.ObjectId();
+        const res = await request(app)
+            .delete('/api/video/bulk')
+            .set('Authorization', token)
+            .send({
+                ids: [
+                    videoId1,
+                    videoId2
+                ]
+            })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('No videos found')
+    })
+
+    test('Check videos belong to the user logged', async () => {
+        const video1Id = new mongoose.Types.ObjectId();
+        const video2Id = new mongoose.Types.ObjectId();
+        const category1Id = new mongoose.Types.ObjectId();
+        const category2Id = new mongoose.Types.ObjectId();
+        const userIdTest = new mongoose.Types.ObjectId();
+
+        const video1 = await Video.create({
+            _id: video1Id,
+            user: userId,
+            title: 'Video prueba 1',
+            description: 'Video prueba',
+            category: category1Id,
+            platform: 'Youtube',
+            image: 'asdfasdfasdf',
+            url: 'asfdasdf'
+        })
+        const video2 = await Video.create({
+            _id: video2Id,
+            user: userIdTest,
+            title: 'Video prueba 2',
+            description: 'Video prueba',
+            category: category2Id,
+            platform: 'Youtube',
+            image: 'asdfasdfasdf',
+            url: 'asfdasdf'
+        })
+
+        const res = await request(app)
+            .delete('/api/video/bulk')
+            .set("Authorization", token)
+            .send({
+                ids: [
+                    video1._id,
+                    video2._id
+                ]
+            })
+        expect(res.statusCode).toBe(403);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('You are not allowed to delete this video');
+    })
+
+    test("Delete multiple videos succesfully", async () => {
+        const video1Id = new mongoose.Types.ObjectId();
+        const video2Id = new mongoose.Types.ObjectId();
+        const category1Id = new mongoose.Types.ObjectId();
+
+        const video1 = await Video.create({
+            _id: video1Id,
+            user: userId,
+            title: 'Video prueba 1',
+            description: 'Video prueba',
+            category: category1Id,
+            platform: 'Youtube',
+            image: 'asdfasdfasdf',
+            url: 'asfdasdf'
+        })
+        const video2 = await Video.create({
+            _id: video2Id,
+            user: userId,
+            title: 'Video prueba 2',
+            description: 'Video prueba',
+            category: category1Id,
+            platform: 'Youtube',
+            image: 'asdfasdfasdf',
+            url: 'asfdasdf'
+        })
+
+        const res = await request(app)
+            .delete('/api/video/bulk')
+            .set("Authorization", token)
+            .send({
+                ids: [
+                    video1._id,
+                    video2._id
+                ]
+            })
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('Deleting multiple videos');
+        expect(res.body.deletedVideos.deletedCount).toBe(2);
+    })
+})
+
+describe("DELETE /api/video/:id", () => {
+    test("Check if the video id is a valid ObjectId", async () => {
+        // No necesitas crear un video para este test
+        // Solo estás verificando que un ID inválido devuelve error 400
+        const invalidId = "dwdwqdwq";
+        const res = await request(app)
+            .delete(`/api/video/${invalidId}`)
+            .set("Authorization", token);
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toBe(`The id ${invalidId} is not a valid ObjectId`);
+    })
+
+    test("Check that the video exists", async () => {
+        const videoId = new mongoose.Types.ObjectId();
+        const res = await request(app)
+            .delete(`/api/video/${videoId}`)
+            .set("Authorization", token)
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toContain("Video not found");
+    })
+
+    test("Check that the video belongs to the user logged", async () => {
+        const videoId = new mongoose.Types.ObjectId();
+        const video = Video.create({
+            _id: videoId,
+            user: new mongoose.Types.ObjectId(),
+            title: "Some other user's video",
+            description: "A video from a different user",
+            url: "https://example.com/video",
+            category: new mongoose.Types.ObjectId(),
+            platform: "Youtube",
+            image: "someimage123.png"
+        })
+
+        const res = await request(app)
+        .delete(`/api/video/${videoId}`)
+        .set("Authorization", token)
+
+        expect(res.statusCode).toBe(403);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toBe("You are not allowed to delete this video");
+    })
+    // CHECK: DELETES SINGLE VIDEO CORRECTLY
+    test('Delete a single video correctly', async () => {
+        const videoId = new mongoose.Types.ObjectId()
+        const video = await Video.create({
+            _id: videoId,
+            user: userId,
+            title: "Video test",
+            description: "video test description",
+            url: "https://example.com/video",
+            category: new mongoose.Types.ObjectId(),
+            platform: "Youtube",
+            image: "someimage123.png"
+        })
+
+        const res = await request(app)
+        .delete(`/api/video/${videoId}`)
+        .set('Authorization', token)
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('Deleting single video');
+        expect(res.body.deletedVideo).toHaveProperty('title');
+        expect(res.body.deletedVideo).toHaveProperty('description');
     })
 })

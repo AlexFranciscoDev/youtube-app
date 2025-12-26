@@ -13,5 +13,7 @@ router.get('/user/:id', auth.isAuth, VideoController.getVideosByUser);
 router.get('/user', auth.isAuth, VideoController.getVideosByUser);
 router.get('/:id', auth.isAuth, VideoController.getSingleVideo);
 router.put('/:id', auth.isAuth, upload.single('image'), VideoController.editVideo);
+router.delete('/bulk', auth.isAuth, VideoController.deleteVideo); 
+router.delete('/:id', auth.isAuth, VideoController.deleteVideo);
 
 module.exports = router;

@@ -349,6 +349,111 @@ const editVideo = async (req, res) => {
     }
 }
 
+const deleteVideo = async (req, res) => {
+    const userId = req.user.id;
+    const videoId = req.params.id;
+    const idsBody = req.body && req.body.ids;
+    // Check if it's single DELETE or multiple DELETE
+    if (idsBody && Array.isArray(idsBody) && idsBody.length > 0) {
+        // Validate that all IDs are valid ObjectIds
+        idsBody.forEach((id) => {
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: `The id ${id} is not a valid ObjectId`
+                })
+            }
+        })
+        // Search the videos
+        const videos = await Video.find({_id: {$in: idsBody}})
+        try {
+            // Verify that the videos exists
+            if (!videos || videos.length === 0) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: 'No videos found'
+                })
+            }
+            // Verify that the videos belong to the user logged
+            videos.forEach((video) => {
+                if (video.user != userId) {
+                    return res.status(403).send({
+                        status: 'Error',
+                        message: 'You are not allowed to delete this video'
+                    })
+                }
+            })
+            // Delete many videos
+            const deletedVideos = await Video.deleteMany({_id: {$in: idsBody}, user: userId});
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Deleting multiple videos',
+                deletedVideos
+            })
+        } catch (error) {
+            return res.status(400).send({
+                status: 'Error',
+                error
+            })
+        }
+    } else {
+        // If not, SINGLE DELETE using the id from URL params
+        // Check if videoId exists (it won't exist in /bulk route)
+        if (!videoId) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'Video ID is required'
+            })
+        }
+        // Validate that the video ID in the URL param is a valid ObjectId
+        if (!ObjectId.isValid(videoId)) {
+            return res.status(400).send({
+                status: 'Error',
+                message: `The id ${videoId} is not a valid ObjectId`
+            })
+        }
+        // Search the video with Video.findById(videoId)
+        const video = await Video.findById(videoId);
+        console.log(`video not found: ${video}`);
+        // Verify that the video exists
+        try {
+            if (!video || video.length === 0) {
+                return res.status(400).send({
+                    status: "Error",
+                    message: "Video not found" 
+                })
+            }
+        } catch (error) {
+            return res.status(400).send({
+                status: "Error",
+                error
+            })
+        }
+        // Check the video belongs to the logged user
+        if (video.user != userId) {
+            return res.status(403).send({
+                status: 'Error',
+                message: 'You are not allowed to delete this video'
+            })
+        }
+        // Delete using Video.findByIdAndDelete(videoId)
+        try {
+            const deletedVideo = await Video.findByIdAndDelete(videoId);
+            return res.status(200).send({
+                status: 'Success',
+                message: 'Deleting single video',
+                deletedVideo
+            })
+            // Respond with deleted video info (or appropriate error)
+        } catch (error) {
+            return res.status(400).send({
+                status: 'Error',
+                error
+            })
+        }
+    }
+}
+
 module.exports = {
     postVideo,
     listVideos,
@@ -357,5 +462,6 @@ module.exports = {
     getVideosByPlatform,
     getVideosByUser,
     getVideosByPlatformAndCategory,
-    editVideo
+    editVideo,
+    deleteVideo
 }
