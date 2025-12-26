@@ -671,14 +671,28 @@ describe("DELETE /api/video/:id", () => {
         expect(res.body.status).toBe("Error");
         expect(res.body.message).toBe("You are not allowed to delete this video");
     })
-
     // CHECK: DELETES SINGLE VIDEO CORRECTLY
+    test('Delete a single video correctly', async () => {
+        const videoId = new mongoose.Types.ObjectId()
+        const video = await Video.create({
+            _id: videoId,
+            user: userId,
+            title: "Video test",
+            description: "video test description",
+            url: "https://example.com/video",
+            category: new mongoose.Types.ObjectId(),
+            platform: "Youtube",
+            image: "someimage123.png"
+        })
 
-    /*
-3.2. Para borrado único:
-ID presente
-ID válido (ObjectId)
-Video existe
-Video pertenece al usuario
-*/
+        const res = await request(app)
+        .delete(`/api/video/${videoId}`)
+        .set('Authorization', token)
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('Deleting single video');
+        expect(res.body.deletedVideo).toHaveProperty('title');
+        expect(res.body.deletedVideo).toHaveProperty('description');
+    })
 })
