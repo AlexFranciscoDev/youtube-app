@@ -8,9 +8,11 @@ const jwt = require('../services/jwt');
 const register = (req, res) => {
     // Receive the data from the request body
     const params = req.body;
+    // Get image from the request
+    const file = req.file;
 
     // Check that we receive all the data needed
-    if (!params.username || !params.email || !params.password) {
+    if (!params.username || !params.email || !params.password || !file) {
         return res.status(400).send({
             status: "Error",
             message: "Missing parameters"
@@ -50,7 +52,8 @@ const register = (req, res) => {
                     const user = new User({
                         username: params.username,
                         email: params.email,
-                        password: hash
+                        password: hash,
+                        image: file.originalname
                     })
                     user.save()
                         .then((savedUser) => {
@@ -124,7 +127,6 @@ const profile = (req, res) => {
     const userId = req.user;
     // Receive user id
     // Search for the user
-    console.log(userId);
     User.findOne({ _id: userId })
         .select({ password: 0, __v: 0, role: 0 })
         .then((user) => {

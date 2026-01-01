@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const UserController = require('../controllers/user');
 const auth = require("../middlewares/auth");
+const upload = require('../middlewares/upload');
 
-router.post("/register", UserController.register);
+router.post("/register", upload.single('image'), UserController.register);
 router.post('/login', UserController.login);
 router.get('/profile', auth.isAuth, UserController.profile);
 router.put("/profile", auth.isAuth, UserController.update);
