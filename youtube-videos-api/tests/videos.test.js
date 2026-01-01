@@ -412,6 +412,78 @@ describe('GET /api/video/platform/:platform/category/:category', () => {
     })
 })
 
+/* 
+------------------
+POST NEW VIDEO
+------------------
+*/
+describe('POST /api/video/', () => {
+    test('Check that we received all the data', async () => {
+        const res = await request(app)
+        .post('/api/video/')
+        .set('Authorization', token)
+        .send({
+            user: userId,
+            title: 'Video prueba 1',
+            category: new mongoose.Types.ObjectId(),
+            platform: 'TikTok',
+            image: 'asdfasdfasdf',
+            url: 'asfdasdf'
+        })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('Parameters missing');
+    })
+
+    test("Check category introduced exists", async () => {
+        // Crear un archivo ficticio para simular la subida
+        // Usar Buffer para simular un archivo de imagen
+        const imageBuffer = Buffer.from('fake image content');
+        
+        const res = await request(app)
+            .post("/api/video/")
+            .set("Authorization", token)
+            .attach('image', imageBuffer, 'test-image.jpg') // Simular subida de archivo
+            .field('title', 'Video prueba 1')
+            .field('description', 'Description video 1')
+            .field('url', 'asfdasdf')
+            .field('category', 'wadawdwaddawd')
+            .field('platform', 'Youtube')
+        
+            // acabar de checkear que no existe la categoria
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toBe("Category not found");
+    })
+
+    test('Save video successfully', async () => {
+        const imageBuffer = Buffer.from('fake image content');
+        const res = await request(app)
+        .post('/api/video/')
+        .set('Authorization', token)
+        .field('title', 'Video prueba')
+        .field('description', 'Video prueba')
+        .field('url', 'https://youtube.com/1')
+        .field('category', new mongoose.Types.ObjectId().toString())
+        .field('platform', 'TikTok')
+        .attach('image', imageBuffer, 'test-image.jpg')
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toContain('New video created');
+        expect(res.body.videoSaved).toHaveProperty('title');
+        expect(res.body.videoSaved).toHaveProperty('description');
+        expect(res.body.videoSaved).toHaveProperty('url');
+        expect(res.body.videoSaved).toHaveProperty('category');
+        expect(res.body.videoSaved).toHaveProperty('platform');
+    })
+})
+
+/* 
+------------------
+UPDATE VIDEO
+------------------
+*/
 describe('PUT /api/video/:id', () => {
     const video = new Video({
         _id: '6920fd95efb67fafe65e17f2',
@@ -438,7 +510,7 @@ describe('PUT /api/video/:id', () => {
         const resA = await request(app)
             .put('/api/video/6920fd95efb67fafe65e17f1')
             .set('Authorization', token)
-            .send({ title: 'prueba' })
+            .field('title', 'prueba')
 
         expect(resA.statusCode).toBe(404);
         expect(resA.body.status).toBe('Error');
@@ -467,7 +539,7 @@ describe('PUT /api/video/:id', () => {
         const res = await request(app)
             .put(`/api/video/${videoId}`)
             .set('Authorization', token)
-            .send({ title: 'Prueba' })
+            .field('title', 'Prueba')
 
         expect(res.statusCode).toBe(400);
         expect(res.body.status).toBe('Error');
@@ -494,10 +566,8 @@ describe('PUT /api/video/:id', () => {
         const res = await request(app)
             .put(`/api/video/${videoTest._id}`)
             .set('Authorization', token)
-            .send({
-                title: 'This is the new title',
-                description: 'This is the new description'
-            })
+            .field('title', 'This is the new title')
+            .field('description', 'This is the new description')
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('Video edited successfully');
@@ -506,8 +576,11 @@ describe('PUT /api/video/:id', () => {
     })
 })
 
-// Delete multiple videos
-describe("DELETE /api/video/bulk", () => {
+/* 
+------------------
+DELETE MULTIPLE VIDEOS
+------------------
+*/describe("DELETE /api/video/bulk", () => {
     // TESTS MULTIPLE VIDEOS
     test('Check that ids passed are ObjectIds valid', async () => {
         const ids = [
@@ -626,6 +699,11 @@ describe("DELETE /api/video/bulk", () => {
     })
 })
 
+/* 
+------------------
+DELETE SINGLE VIDEO
+------------------
+*/
 describe("DELETE /api/video/:id", () => {
     test("Check if the video id is a valid ObjectId", async () => {
         // No necesitas crear un video para este test
