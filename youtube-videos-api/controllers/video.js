@@ -414,7 +414,6 @@ const deleteVideo = async (req, res) => {
         }
         // Search the video with Video.findById(videoId)
         const video = await Video.findById(videoId);
-        console.log(`video not found: ${video}`);
         // Verify that the video exists
         try {
             if (!video || video.length === 0) {
