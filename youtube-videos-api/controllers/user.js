@@ -123,51 +123,30 @@ const login = async (req, res) => {
     //https://www.youtube.com/watch?v=TAI68Zlseq8
 }
 
-const profile = (req, res) => {
-    const userId = req.user;
-    // Receive user id
-    // Search for the user
-    User.findOne({ _id: userId })
-        .select({ password: 0, __v: 0, role: 0 })
-        .then((user) => {
-            return res.status(200).send({
-                status: "Success",
-                message: "User found",
-                user: user
-            })
-        })
-        .catch((error) => {
+const profile = async (req, res) => {
+    // If theres no id passed in parameters, use user id
+    const userId = req.params.id ? req.params.id : req.user.id;
+    try {
+        const profile = await User.findOne({ _id: userId });
+        console.log(profile);
+        if (!profile) {
             return res.status(404).send({
                 status: "Error",
-                message: "User not found",
-                error: error.message
+                message: "User not found"
             })
-        })
-
-    // REVISAR PORQUE EL DE ARRIBA NO FUNCIONA Y EL DE ABAJO NO
-    /* 
-        let userId = req.user.id;
-    const params = req.params;
-
-    if (params.id) userId = params.id;
-
-    User.findOne({_id: userId})
-    .select({password: 0, __v: 0, role: 0})
-    .then((user) => {
+        }
         return res.status(200).send({
-            status: 'Success',
-            message: 'Showing profile data',
-            user
+            status: "Success",
+            message: "User found",
+            user: profile
         })
-    })
-    .catch((error) => {
-        return res.status(400).send({
-            status: 'Error',
-            message: 'User not found',
+    } catch (error) {
+        return res.status(404).send({
+            status: "Error",
+            prueba: 'prueba',
             error: error.message
         })
-    })
-    */
+    }
 
 }
 

@@ -216,34 +216,29 @@ describe('POST /api/user/login', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('User found');
-        
-        // Verify that token exists in response
-        /*
-        expect(res.body).toHaveProperty('token');
-        expect(typeof res.body.token).toBe('string');
-        expect(res.body.token.length).toBeGreaterThan(0);
-        
-        // Decode and verify token structure
+        // Verify that tooken exists in response
+        expect(res.body).toHaveProperty("token");
+        expect(typeof res.body.token).toBe("string");
+        // Decode and verify token structure (with the token and the secret key)
         const decodedToken = jwt.decode(res.body.token, jwtService.secret);
-        
-        // Verify token contains correct user data
-        expect(decodedToken).toHaveProperty('id');
-        expect(decodedToken).toHaveProperty('username');
-        expect(decodedToken).toHaveProperty('iat'); // issued at
-        expect(decodedToken).toHaveProperty('exp'); // expiration
-        
-        // Verify token data matches user
+        // Verify that the token contents user data
+        expect(decodedToken).toHaveProperty("id");
+        expect(decodedToken).toHaveProperty("username");
+        expect(decodedToken).toHaveProperty("iat");
+        expect(decodedToken).toHaveProperty("exp");
+        // Verify that the token matches user data
         expect(decodedToken.id).toBe(userSaved._id.toString());
         expect(decodedToken.username).toBe(userSaved.username);
-        
         // Verify token expiration (should be ~14 days from now)
         const expectedExp = moment().add(14, 'days').unix();
-        const timeDifference = Math.abs(decodedToken.exp - expectedExp);
+        const timeDifference = Math.abs(decodedToken.exp - expectedExp); // 
         // Allow 5 seconds difference for test execution time
         expect(timeDifference).toBeLessThan(5);
-        
         // Verify token is not expired
         expect(decodedToken.exp).toBeGreaterThan(moment().unix());
-        */
     })
+})
+
+describe('GET /api/user/profile', () => {
+    
 })
