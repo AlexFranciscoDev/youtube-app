@@ -64,7 +64,6 @@ const register = (req, res) => {
                             });
                         })
                         .catch((error) => {
-                            console.error("Error creating user:", error);
                             return res.status(500).send({
                                 status: 'Error',
                                 message: "User can't be created due to an internal error."
@@ -128,7 +127,6 @@ const profile = async (req, res) => {
     const userId = req.params.id ? req.params.id : req.user.id;
     try {
         const profile = await User.findOne({ _id: userId });
-        console.log(profile);
         if (!profile) {
             return res.status(404).send({
                 status: "Error",
@@ -147,7 +145,6 @@ const profile = async (req, res) => {
             error: error.message
         })
     }
-
 }
 
 const update = async (req, res) => {
@@ -166,12 +163,13 @@ const update = async (req, res) => {
             exec()
             .then(async userFound => {
                 if (userFound) {
-                    return res.status(409).send({ message: "Username already used" })
+                    return res.status(409).send({ status: 'Error', message: "Username already used" })
                 }
                 const updatedUser = await User.findOneAndUpdate({ _id: userLogged.id }, { username: params.username }, {
                     new: true
                 });
                 res.status(200).send({
+                    status: 'Success',
                     message: "User updated correctly",
                     user: updatedUser
                 })

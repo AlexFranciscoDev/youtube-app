@@ -240,5 +240,95 @@ describe('POST /api/user/login', () => {
 })
 
 describe('GET /api/user/profile', () => {
+    // User not found
+    test("Check that user is not found", async() => {
+        const res = await request(app)
+        .get("/api/user/profile")
+        .set("Authorization", token)
+        expect(res.statusCode).toBe(404);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toBe("User not found");
+    })
+    // Test logged user
+    test("Check that the user logged is found", async () => {
+        const user = await User.create({
+            username: 'TestUser',
+            email: 'test@test.com',
+            password: '123456'
+        })
+        token = jwtService.createToken(user);
+        userId = user._id;
+
+        const res = await request(app)
+        .get("/api/user/profile")
+        .set("Authorization", token)
+        
+        expect(res.statusCode).toBe(200)
+        expect(res.body.status).toBe("Success")
+        expect(res.body.message).toBe("User found")
+        expect(res.body.user).toHaveProperty('username', 'TestUser');
+        expect(res.body.user).toHaveProperty('email', 'test@test.com');
+    })
     
+    // Test user with parameters passed
+    test('Check that the user passed is found', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const user = await User.create({
+            _id: userId,
+            username: 'UserPassedParameters',
+            email: 'userpassed@test.com',
+            password: '123456'
+        })
+
+        const res = await request(app)
+        .get(`/api/user/profile/${userId}`)
+        .set('Authorization', token)
+        expect(res.statusCode).toBe(200)
+        expect(res.body.status).toBe("Success")
+        expect(res.body.message).toBe("User found")
+        expect(res.body.user).toHaveProperty('username', 'UserPassedParameters');
+        expect(res.body.user).toHaveProperty('email', 'userpassed@test.com');
+    })
+})
+
+describe('UPDATE /api/user/profile', () => {
+    test('Check that the username put is not already in used', async () => {
+        const user = await User.create({
+            username: 'userUsed',
+            email: 'userpassed@test.com',
+            password: '123456'
+        })
+        
+        const res = await request(app)
+        .put('/api/user/profile')
+        .set('Authorization', token)
+        .send({
+            username: 'userUsed'
+        })
+        expect(res.statusCode).toBe(409);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toContain('Username already used');
+    })
+
+    test('Check that the user is updated', async () => {
+        const user = await User.create({
+            username: 'TestUser',
+            email: 'test@test.com',
+            password: '123456'
+        })
+        token = jwtService.createToken(user);
+        userId = user._id;
+        
+        const res = await request(app)
+        .put('/api/user/profile')
+        .set('Authorization', token)
+        .send({
+            username: 'newUsername'
+        })
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toContain('User updated correctly');
+        expect(res.body.user).toHaveProperty('username', 'newUsername');
+
+    })
 })
