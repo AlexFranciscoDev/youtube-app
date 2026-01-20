@@ -296,15 +296,17 @@ describe('UPDATE /api/user/profile', () => {
         const user = await User.create({
             username: 'userUsed',
             email: 'userpassed@test.com',
-            password: '123456'
+            password: '123456',
+            image: 'test-image.jpg'
         })
+        const imageBuffer = Buffer.from('fake image content');
         
         const res = await request(app)
         .put('/api/user/profile')
         .set('Authorization', token)
-        .send({
-            username: 'userUsed'
-        })
+        .field('username', 'userUsed')
+        .attach('image', imageBuffer, 'image-test.jpg')
+        
         expect(res.statusCode).toBe(409);
         expect(res.body.status).toBe('Error');
         expect(res.body.message).toContain('Username already used');
@@ -316,19 +318,21 @@ describe('UPDATE /api/user/profile', () => {
             email: 'test@test.com',
             password: '123456'
         })
+        const imageBuffer = Buffer.from('fake image content');
         token = jwtService.createToken(user);
         userId = user._id;
         
         const res = await request(app)
         .put('/api/user/profile')
         .set('Authorization', token)
-        .send({
-            username: 'newUsername'
-        })
+        .field('username', 'newUsername')
+        .attach('image', imageBuffer, 'image-test.jpg')
+
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toContain('User updated correctly');
         expect(res.body.user).toHaveProperty('username', 'newUsername');
+        expect(res.body.user).toHaveProperty('image', 'image-test.jpg');
 
     })
 })

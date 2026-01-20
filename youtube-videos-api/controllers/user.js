@@ -150,34 +150,34 @@ const profile = async (req, res) => {
 const update = async (req, res) => {
     // Receive user from the url
     const userLogged = req.user;
+    // Get image from the request
+    const file = req.file;
     // Receive the new parameters (only the name)
-    const params = req.body;
-    if (!params.username) {
-        return res.status(400).send({
-            status: "Error",
-            message: "No username specified"
+    const body = req.body;
+    let params = {};
+    body.username ? params.username = body.username : '';
+    file !== '' ? params.image = file.originalname : '';
+    console.log('los parámetros son: ' + file);
+    // Check if the username is not already used.
+    User.findOne({ username: params.username }).
+        exec()
+        .then(async userFound => {
+            if (userFound) {
+                return res.status(409).send({ status: 'Error', message: "Username already used" })
+            }
+            const updatedUser = await User.findOneAndUpdate({ _id: userLogged.id }, params, {
+                new: true
+            });
+            res.status(200).send({
+                status: 'Success',
+                message: "User updated correctly",
+                user: updatedUser
+            })
         })
-    } else {
-        // Check if the username is not already used.
-        User.findOne({ username: params.username }).
-            exec()
-            .then(async userFound => {
-                if (userFound) {
-                    return res.status(409).send({ status: 'Error', message: "Username already used" })
-                }
-                const updatedUser = await User.findOneAndUpdate({ _id: userLogged.id }, { username: params.username }, {
-                    new: true
-                });
-                res.status(200).send({
-                    status: 'Success',
-                    message: "User updated correctly",
-                    user: updatedUser
-                })
-            })
-            .catch(err => {
-                return res.status(400).send({ error: err.message, message: "An error ocurred" });
-            })
-    }
+        .catch(err => {
+            return res.status(400).send({ error: err.message, message: "An error ocurred" });
+        })
+
 }
 
 const updatePassword = async (req, res) => {
