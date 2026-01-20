@@ -1,0 +1,162 @@
+/*
+/* 
+------------------
+TEST AUTORIZACIÓN TOKEN (Middleware isAuth)
+------------------
+Este bloque de tests verifica que el middleware isAuth funciona correctamente.
+El middleware se usa en rutas protegidas como /api/video
+*/
+describe('TEST AUTORIZACIÓN TOKEN', () => {
+    // Variables para guardar el usuario y token válido
+    // Se recrean antes de cada test porque afterEach limpia la BD
+    let validToken;
+    let testUser;
+
+    // beforeEach se ejecuta ANTES de cada test individual
+    // Esto es necesario porque afterEach (línea 42) borra todas las colecciones
+    beforeEach(async () => {
+        // 1. Crear un usuario nuevo en la base de datos
+        testUser = await User.create({
+            username: "AuthTestUser",
+            email: "authtest@test.com",
+            password: "123456",
+            image: "test.jpg"
+        });
+        
+        // 2. Generar un token válido para ese usuario usando el servicio JWT
+        // Este token será válido por 14 días (según services/jwt.js)
+        validToken = jwtService.createToken(testUser);
+    });
+
+    /* 
+    TEST 1: Sin token
+    Verifica que cuando NO se envía token, el middleware retorna 403
+    */
+    test('Should return 403 if no token is provided', async () => {
+        // Hacer petición GET a /api/video SIN enviar header Authorization
+        const res = await request(app)
+            .get('/api/video')
+        
+        // Verificar que el middleware detectó la ausencia de token
+        expect(res.statusCode).toBe(403);
+        expect(res.body.message).toBe("You don't have authorization");
+    })
+
+    /* 
+    TEST 2: Token inválido
+    Verifica que cuando se envía un token malformado, el middleware lo rechaza
+    */
+    test('Should return 404 if token is invalid', async () => {
+        // Crear un string que parece token pero no es válido
+        const invalidToken = 'invalid.token.here';
+        
+        // Hacer petición enviando el token inválido en el header Authorization
+        const res = await request(app)
+            .get('/api/video')
+            .set('Authorization', invalidToken)
+        
+        // Verificar que el middleware detectó que el token no es válido
+        // Status 404 porque el token existe pero no se puede decodificar
+        expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Token not valid");
+    })
+
+    /* 
+    TEST 3: Token manipulado
+    Verifica que si alguien modifica un token válido, el sistema lo detecta
+    */
+    test('Should return 404 if token is manipulated (corrupted)', async () => {
+        // Tomar el token válido y alterarlo (quitar últimos 5 caracteres y añadir otros)
+        const manipulatedToken = validToken.slice(0, -5) + 'XXXXX';
+        
+        // Hacer petición con el token manipulado
+        const res = await request(app)
+            .get('/api/video')
+            .set('Authorization', manipulatedToken)
+        
+        // Verificar que el middleware detectó la manipulación
+        expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Token not valid");
+    })
+
+    /* 
+    TEST 4: Token expirado
+    Verifica que tokens con fecha de expiración pasada son rechazados
+    */
+    test('Should return 401 if token is expired', async () => {
+        // Crear un payload con fecha de expiración en el pasado
+        const expiredPayload = {
+            id: testUser._id.toString(),                    // ID del usuario
+            username: testUser.username,                   // Username
+            iat: moment().subtract(15, 'days').unix(),      // Creado hace 15 días
+            exp: moment().subtract(1, 'days').unix()       // Expiró hace 1 día ⚠️
+        };
+        
+        // Codificar el payload con el secret correcto
+        // El token es válido en estructura, pero expiró
+        const expiredToken = jwt.encode(expiredPayload, jwtService.secret);
+        
+        // Hacer petición con el token expirado
+        const res = await request(app)
+            .get('/api/video')
+            .set('Authorization', expiredToken)
+        
+        // Verificar que el middleware detectó la expiración
+        // Status 401 (no 404) porque el token se decodifica pero está expirado
+        expect(res.statusCode).toBe(401);
+        expect(res.body.message).toBe("Token expired");
+    })
+
+    /* 
+    TEST 5: Token válido
+    Verifica que con un token válido, el middleware permite el acceso
+    */
+    test('Should allow access with valid token', async () => {
+        // Hacer petición con el token válido creado en beforeEach
+        const res = await request(app)
+            .get('/api/video')
+            .set('Authorization', validToken)
+        
+        // El status puede ser:
+        // - 200: Si hay videos en la BD (éxito)
+        // - 404: Si no hay videos ("Videos not found")
+        // Ambos son válidos porque el problema NO es de autorización
+        expect([200, 404]).toContain(res.statusCode);
+        
+        // Verificar que NO es ningún error de autorización
+        expect(res.body.message).not.toBe("You don't have authorization");
+        expect(res.body.message).not.toBe("Token not valid");
+        expect(res.body.message).not.toBe("Token expired");
+    })
+
+    /* 
+    TEST 6: Extracción del usuario del token
+    Verifica que el middleware extrae correctamente el usuario del token
+    y lo guarda en req.user para que el controlador pueda usarlo
+    */
+    test('Should extract user from token correctly', async () => {
+        // Crear un video en la BD para que el endpoint retorne 200
+        await Video.create({
+            title: 'Test Video',
+            description: 'Test description',
+            url: 'https://youtube.com/test',
+            category: new mongoose.Types.ObjectId(),
+            platform: 'Youtube',
+            file: 'test.jpg',
+            user: testUser._id
+        });
+
+        // Hacer petición con token válido
+        const res = await request(app)
+            .get('/api/video')
+            .set('Authorization', validToken)
+        
+        // Verificar que:
+        // 1. El middleware NO bloqueó la petición (status 200)
+        // 2. El endpoint pudo acceder a req.user (extraído del token)
+        // 3. El controlador procesó la petición correctamente
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+    })
+})
+*/

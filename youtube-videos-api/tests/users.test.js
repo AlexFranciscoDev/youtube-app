@@ -5,6 +5,8 @@ const User = require("../models/User");
 const Video = require("../models/Video");
 const jwtService = require("../services/jwt");
 const bcrypt = require('bcrypt');
+const jwt = require('jwt-simple');
+const moment = require('moment');
 
 let token;
 let userId;
@@ -119,7 +121,7 @@ describe('POST /api/user/register', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('User registered successfully');
-        console.log(res.body.user);
+        
         // 3. Search the user in the database
         const userSaved = await User.findOne({_id: res.body.user._id})
         expect(userSaved).toHaveProperty('username')
@@ -146,5 +148,191 @@ describe('POST /api/user/register', () => {
         expect(res.body.status).toContain('Success')
         expect(res.body.message).toContain('User registered successfully')
     })
+})
 
+describe('POST /api/user/login', () => {
+    test('Check that we receive all the parameters', async () => {
+        const res = await request(app)
+        .post('/api/user/login')
+        .send({
+            email: 'prueba@prueba.com'
+        })
+        expect(res.statusCode).toBe(400);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('Missing parameters');
+    })
+
+    test('Check that the user exists', async () => {
+        const res = await request(app)
+        .post('/api/user/login')
+        .send({
+            email: 'testuser@test.com',
+            password: 'myPassword'
+        })
+        expect(res.statusCode).toBe(404);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toBe('User not found');
+    })
+
+    test('Check that the password introduced is correct', async () => {
+        const imageBuffer = Buffer.from('fake image content');
+        const originalPassword = '123456'
+        // Create the user
+        const res = await request(app)
+        .post('/api/user/register')
+        .field('username', 'randomUser')
+        .field('email', 'test@test.com')
+        .field('password', originalPassword)
+        .attach('image', imageBuffer, 'image.jpg')
+        
+        const userSaved = await User.findOne({_id: res.body.user._id})
+        expect(userSaved).toMatchObject({username: 'randomUser'})
+        expect(await bcrypt.compare('wrongPassword', userSaved.password)).toBeFalsy();
+    })
+
+    test('User found correctly and token is created', async () => {
+        const originalPassword = '123456'
+        // Create the user directly in the database (more efficient for setup)
+        const hashedPassword = await bcrypt.hash(originalPassword, 10);
+        const userSaved = await User.create({
+            username: 'randomUser',
+            email: 'test@test.com',
+            password: hashedPassword,
+            image: 'test-image.jpg'
+        })
+
+        expect(userSaved).toMatchObject({username: 'randomUser'})
+        expect(await bcrypt.compare(originalPassword, userSaved.password)).toBeTruthy();
+
+        // Test the login endpoint
+        const res = await request(app)
+        .post('/api/user/login')
+        .send({
+            email: userSaved.email,
+            password: originalPassword
+        })
+        
+        // Verify response
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toBe('User found');
+        // Verify that tooken exists in response
+        expect(res.body).toHaveProperty("token");
+        expect(typeof res.body.token).toBe("string");
+        // Decode and verify token structure (with the token and the secret key)
+        const decodedToken = jwt.decode(res.body.token, jwtService.secret);
+        // Verify that the token contents user data
+        expect(decodedToken).toHaveProperty("id");
+        expect(decodedToken).toHaveProperty("username");
+        expect(decodedToken).toHaveProperty("iat");
+        expect(decodedToken).toHaveProperty("exp");
+        // Verify that the token matches user data
+        expect(decodedToken.id).toBe(userSaved._id.toString());
+        expect(decodedToken.username).toBe(userSaved.username);
+        // Verify token expiration (should be ~14 days from now)
+        const expectedExp = moment().add(14, 'days').unix();
+        const timeDifference = Math.abs(decodedToken.exp - expectedExp); // 
+        // Allow 5 seconds difference for test execution time
+        expect(timeDifference).toBeLessThan(5);
+        // Verify token is not expired
+        expect(decodedToken.exp).toBeGreaterThan(moment().unix());
+    })
+})
+
+describe('GET /api/user/profile', () => {
+    // User not found
+    test("Check that user is not found", async() => {
+        const res = await request(app)
+        .get("/api/user/profile")
+        .set("Authorization", token)
+        expect(res.statusCode).toBe(404);
+        expect(res.body.status).toBe("Error");
+        expect(res.body.message).toBe("User not found");
+    })
+    // Test logged user
+    test("Check that the user logged is found", async () => {
+        const user = await User.create({
+            username: 'TestUser',
+            email: 'test@test.com',
+            password: '123456'
+        })
+        token = jwtService.createToken(user);
+        userId = user._id;
+
+        const res = await request(app)
+        .get("/api/user/profile")
+        .set("Authorization", token)
+        
+        expect(res.statusCode).toBe(200)
+        expect(res.body.status).toBe("Success")
+        expect(res.body.message).toBe("User found")
+        expect(res.body.user).toHaveProperty('username', 'TestUser');
+        expect(res.body.user).toHaveProperty('email', 'test@test.com');
+    })
+    
+    // Test user with parameters passed
+    test('Check that the user passed is found', async () => {
+        const userId = new mongoose.Types.ObjectId();
+        const user = await User.create({
+            _id: userId,
+            username: 'UserPassedParameters',
+            email: 'userpassed@test.com',
+            password: '123456'
+        })
+
+        const res = await request(app)
+        .get(`/api/user/profile/${userId}`)
+        .set('Authorization', token)
+        expect(res.statusCode).toBe(200)
+        expect(res.body.status).toBe("Success")
+        expect(res.body.message).toBe("User found")
+        expect(res.body.user).toHaveProperty('username', 'UserPassedParameters');
+        expect(res.body.user).toHaveProperty('email', 'userpassed@test.com');
+    })
+})
+
+describe('UPDATE /api/user/profile', () => {
+    test('Check that the username put is not already in used', async () => {
+        const user = await User.create({
+            username: 'userUsed',
+            email: 'userpassed@test.com',
+            password: '123456',
+            image: 'test-image.jpg'
+        })
+        const imageBuffer = Buffer.from('fake image content');
+        
+        const res = await request(app)
+        .put('/api/user/profile')
+        .set('Authorization', token)
+        .field('username', 'userUsed')
+        .attach('image', imageBuffer, 'image-test.jpg')
+        
+        expect(res.statusCode).toBe(409);
+        expect(res.body.status).toBe('Error');
+        expect(res.body.message).toContain('Username already used');
+    })
+
+    test('Check that the user is updated', async () => {
+        const user = await User.create({
+            username: 'TestUser',
+            email: 'test@test.com',
+            password: '123456'
+        })
+        const imageBuffer = Buffer.from('fake image content');
+        token = jwtService.createToken(user);
+        userId = user._id;
+        
+        const res = await request(app)
+        .put('/api/user/profile')
+        .set('Authorization', token)
+        .field('username', 'newUsername')
+        .attach('image', imageBuffer, 'image-test.jpg')
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.status).toBe('Success');
+        expect(res.body.message).toContain('User updated correctly');
+        expect(res.body.user).toHaveProperty('username', 'newUsername');
+        expect(res.body.user).toHaveProperty('image', 'image-test.jpg');
+
+    })
 })
