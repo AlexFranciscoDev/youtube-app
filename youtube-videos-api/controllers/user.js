@@ -3,6 +3,14 @@ const validate = require("../helpers/validate");
 const User = require("../models/User");
 const jwt = require('../services/jwt');
 
+const safeUnlink = async (filePath) => {
+    try {
+        await fs.unlink(filePath)
+    } catch (err) {
+        
+    }
+}
+
 
 // Register a new user
 const register = (req, res) => {
