@@ -336,3 +336,25 @@ describe('UPDATE /api/user/profile', () => {
 
     })
 })
+
+describe('DELETE /api/user/delete', () => {
+    test('Check that the user logged is deleted', async () => {
+        const user = await User.create({
+            username: 'TestUser',
+            email: 'test@test.com',
+            password: '123456'
+        })
+        token = jwtService.createToken(user);
+
+        const res = await request(app)
+        .delete("/api/user/delete")
+        .set("Authorization", token)
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe('User and videos deleted correctly');
+        
+    })
+
+    test('Check that the videos from the user are deleted too', () => {
+        
+    })
+})

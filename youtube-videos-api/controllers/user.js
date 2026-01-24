@@ -168,7 +168,6 @@ const update = async (req, res) => {
     let params = {};
     body.username ? params.username = body.username : '';
     file !== '' ? params.image = file.originalname : '';
-    console.log('los parámetros son: ' + file);
     // Check if the username is not already used.
     User.findOne({ username: params.username }).
         exec()
@@ -229,7 +228,6 @@ const updatePassword = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const userId = req.user.id;
-        console.log('user logged: ' + userId);
         // Check that the user exists
         const user = await User.findById(userId);
         if (!user) {
@@ -282,7 +280,6 @@ const deleteUser = async (req, res) => {
             await User.deleteOne({ _id: userId });
             // Delete assets
             const uploadsDir = path.resolve(process.cwd(), 'uploads', 'videos');
-            console.log('uploadsDir:' + uploadsDir);
             await Promise.all(
                 videos
                     .filter(v => v.image && typeof v.image === "string" && v.image.trim() !== "")
