@@ -337,6 +337,7 @@ describe('UPDATE /api/user/profile', () => {
     })
 })
 
+// PREGUNTAR a AI como funciona este test
 describe('DELETE /api/user/delete', () => {
     test('Check that the user logged is deleted', async () => {
         const user = await User.create({
@@ -349,12 +350,96 @@ describe('DELETE /api/user/delete', () => {
         const res = await request(app)
         .delete("/api/user/delete")
         .set("Authorization", token)
-        expect(res.statusCode).toBe(200);
-        expect(res.body.message).toBe('User and videos deleted correctly');
         
+        // HTTP response checks
+        expect(res.statusCode).toBe(200);
+        // Depending on whether Mongo supports transactions or not,
+        // the controller can return one of these two messages.
+        expect([
+            'User deleted correctly',
+            'User and videos deleted correctly'
+        ]).toContain(res.body.message);
+        expect(typeof res.body.deletedVideos).toBe('number');
+
+        // DB check: user should no longer exist
+        const userInDB = await User.findById(user._id);
+        expect(userInDB).toBeNull();
     })
 
-    test('Check that the videos from the user are deleted too', () => {
-        
+    test('Check that the videos from the user are deleted too', async () => {
+        // Create two users: one logged-in user and another user
+        const userLogged = await User.create({
+            username: 'UserWithVideos',
+            email: 'videos@test.com',
+            password: '123456'
+        });
+
+        const otherUser = await User.create({
+            username: 'OtherUser',
+            email: 'other@test.com',
+            password: '123456'
+        });
+
+        // Create videos for both users
+        const videosUserLogged = await Video.create([
+            {
+                user: userLogged._id,
+                title: 'Video 1',
+                description: 'Description 1',
+                url: 'http://example.com/1',
+                category: new mongoose.Types.ObjectId(),
+                platform: 'Youtube',
+                image: 'video1.jpg'
+            },
+            {
+                user: userLogged._id,
+                title: 'Video 2',
+                description: 'Description 2',
+                url: 'http://example.com/2',
+                category: new mongoose.Types.ObjectId(),
+                platform: 'Youtube',
+                image: 'video2.jpg'
+            }
+        ]);
+
+        const videosOtherUser = await Video.create([
+            {
+                user: otherUser._id,
+                title: 'Other user video',
+                description: 'Other description',
+                url: 'http://example.com/3',
+                category: new mongoose.Types.ObjectId(),
+                platform: 'Youtube',
+                image: 'otherVideo.jpg'
+            }
+        ]);
+
+        // Authenticate as the first user
+        token = jwtService.createToken(userLogged);
+
+        const res = await request(app)
+            .delete("/api/user/delete")
+            .set("Authorization", token);
+
+        expect(res.statusCode).toBe(200);
+        expect([
+            'User deleted correctly',
+            'User and videos deleted correctly'
+        ]).toContain(res.body.message);
+        expect(res.body.deletedVideos).toBe(videosUserLogged.length);
+
+        // Check that videos from the logged user are deleted
+        const remainingVideosLoggedUser = await Video.find({ user: userLogged._id });
+        expect(remainingVideosLoggedUser.length).toBe(0);
+
+        // Check that videos from the other user are still there
+        const remainingVideosOtherUser = await Video.find({ user: otherUser._id });
+        expect(remainingVideosOtherUser.length).toBe(videosOtherUser.length);
+
+        // Also verify that the logged user is deleted and the other user still exists
+        const loggedUserInDB = await User.findById(userLogged._id);
+        const otherUserInDB = await User.findById(otherUser._id);
+        expect(loggedUserInDB).toBeNull();
+        expect(otherUserInDB).not.toBeNull();
     })
 })
