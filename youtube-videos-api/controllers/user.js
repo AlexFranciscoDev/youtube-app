@@ -1,7 +1,18 @@
 const bcrypt = require('bcrypt');
 const validate = require("../helpers/validate");
+const path = require("path");
 const User = require("../models/User");
+const Video = require("../models/Video");
 const jwt = require('../services/jwt');
+const { default: mongoose } = require('mongoose');
+
+const safeUnlink = async (filePath) => {
+    try {
+        await fs.unlink(filePath)
+    } catch (err) {
+
+    }
+}
 
 
 // Register a new user
@@ -157,7 +168,6 @@ const update = async (req, res) => {
     let params = {};
     body.username ? params.username = body.username : '';
     file !== '' ? params.image = file.originalname : '';
-    console.log('los parámetros son: ' + file);
     // Check if the username is not already used.
     User.findOne({ username: params.username }).
         exec()
@@ -215,22 +225,81 @@ const updatePassword = async (req, res) => {
     }
 }
 
-const deleteUser = (req, res) => {
-    // Get user logged
-    // Check that the user exists in the database
-    /*
-        HACER ESTO MAS ADELANTE
-        Consideraciones que dejarías para cuando tengas modelos de vídeos/categorías:
-        Borrado en cascada o reasignación de vídeos, comentarios y metadatos.
-        Eliminación de archivos (avatares, videos) en almacenamiento externo.
-        Revocar tokens/sesiones y limpiar refresh tokens.
-        Operaciones en transacción para mantener consistencia.
-        Auditoría/logging y posible ventana de gracia para recuperación.
-    */
-    return res.status(200).send({
-        status: 200,
-        message: "DELETING USER"
-    })
+const deleteUser = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        // Check that the user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).send({
+                status: "Error",
+                message: "User not found"
+            })
+        }
+
+        // Start the transaction
+        let session = null;
+        try {
+            session = await mongoose.startSession();
+            session.startTransaction();
+            // Get the videos (to delete images)
+            const videos = await Video.find({ user: userId })
+                .select('_id image')
+                .session(session);
+            // Delete the videos from the database
+            const delVideos = await Video.deleteMany({ user: userId }).session(session);
+            // Delete the user from the Database
+            await User.deleteOne({ _id: userId }).session(session);
+            // Commit the transaction, so the previous lines are triggered
+            await session.commitTransaction();
+            session.endSession();
+
+            // Delete assets (OUT of the transaction, because fs is not transactional)
+            const uploadsDir = path.resolve(process.cwd(), 'uploads', 'videos')
+            await Promise.all(
+                videos
+                    .filter(v => v.image && typeof v.image === "string" && v.image.trim() !== "")
+                    .map(v => safeUnlink(path.join(uploadsDir, v.image)))
+            );
+            return res.status(200).send({
+                status: 'Success',
+                message: "User deleted correctly",
+                deletedVideos: delVideos.deletedCount
+            })
+        } catch (txErr) {
+            // If it doesn't support transactions o something fails, fallback without sesion
+            if (session) {
+                try { await session.abortTransaction(); } catch (_) { }
+                try { session.endSession(); } catch (_) { }
+            }
+            // Fallback no transaction
+            const videos = await Video.find({ user: userId }).select('_id image');
+            // Delete videos
+            const delVideosRes = await Video.deleteMany({ user: userId });
+            // Delete user
+            await User.deleteOne({ _id: userId });
+            // Delete assets
+            const uploadsDir = path.resolve(process.cwd(), 'uploads', 'videos');
+            await Promise.all(
+                videos
+                    .filter(v => v.image && typeof v.image === "string" && v.image.trim() !== "")
+                    .map(v => safeUnlink(path.join(uploadsDir, v.image)))
+            );
+            return res.status(200).send({
+                status: "Success",
+                message: "User and videos deleted correctly",
+                deletedVideos: delVideosRes.deletedCount,
+                note: "Deleted without DB transaction (Mongo may not support transactions).",
+            });
+        }
+
+    } catch (error) {
+        return res.status(500).send({
+            status: "Error",
+            message: "Error deleting the user",
+            message: error.message
+        })
+    }
 }
 
 
