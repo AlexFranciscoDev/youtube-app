@@ -123,5 +123,6 @@ describe('GET /api/category/:id', () => {
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toBe('Category found');
         expect(res.body.category._id.toString()).toBe(categoryId.toString());
+        expect(res.body.category.name).toContain('Category test');
     })
 })
