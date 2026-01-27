@@ -23,7 +23,7 @@ const validate = (params) => {
     if (!username || !email || !password) {
         throw new Error("Validation failed: username, email or password is invalid");
     } else {
-        console.log("User data is valid");
+        //console.log("User data is valid");
     }
 }
 

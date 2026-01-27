@@ -68,7 +68,6 @@ const getCategoryById = (req, res) => {
     // Get Category by id
     Category.findById(id).
         then((category) => {
-            console.log(category);
             if (!category) {
                 return res.status(400).send({
                     status: "Error",
@@ -129,7 +128,6 @@ const deleteCategory = (req, res) => {
     // Delete category by id
     Category.findOneAndDelete({_id: id})
     .then((categoryDeleted) => {
-        console.log(categoryDeleted);
         if (!categoryDeleted) {
             return res.status(400).send({
                 status: 'Error',
