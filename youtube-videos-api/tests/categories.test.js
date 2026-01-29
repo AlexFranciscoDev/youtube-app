@@ -81,11 +81,7 @@ describe('GET /api/category', () => {
     })
 })
 
-/*
-name: string,
-description: string,
-image: string
-*/
+
 describe('GET /api/category/:id', () => {
     test('Check that the id provided is valid', async () => {
         const categoryId = 'adawdawdawdaw';
@@ -124,5 +120,40 @@ describe('GET /api/category/:id', () => {
         expect(res.body.message).toBe('Category found');
         expect(res.body.category._id.toString()).toBe(categoryId.toString());
         expect(res.body.category.name).toContain('Category test');
+    })
+})
+
+describe("POST /api/category/new", () => {
+    test("Check that we receive all the data", async () => {
+        const imageBuffer = Buffer.from("fake image content");
+        const res = await request(app)
+        .post("/api/category/new")
+        .field("name", "category 1")
+        .attach("image", imageBuffer, "imageTest")
+        .set("Authorization", token)
+        expect(res.statusCode).toBe(400)
+        expect(res.body.status).toContain("Error")
+        expect(res.body.message).toContain("Parameters missing")
+    })
+
+    test("Check that the category is created correctly", async () => {
+        const imageBuffer = Buffer.from("fake image content");
+        const res = await request(app)
+        .post("/api/category/new")
+        .field("name", "category 1")
+        .field("description", "category 1 description")
+        .attach("image", imageBuffer, "imageTest")
+        .set("Authorization", token)
+        expect(res.statusCode).toBe(200)
+        expect(res.body.status).toBe("Success")
+        expect(res.body.message).toBe("New category created")
+        expect(res.body.category).toHaveProperty("name")
+        expect(res.body.category).toHaveProperty("description")
+    })
+})
+
+describe("UPDATE /api/category/:id", () => {
+    test("Update category succesfully", () => {
+        
     })
 })
