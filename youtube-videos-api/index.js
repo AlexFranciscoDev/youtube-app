@@ -24,6 +24,9 @@ app.use((err, req, res, next) => {
   }
 });
 
+// Archivos estáticos (imágenes subidas)
+app.use('/uploads', express.static('uploads'));
+
 // Rutas
 app.use('/api/user', require('./routes/user'));
 app.use("/api/video", require("./routes/video"));

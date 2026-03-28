@@ -64,7 +64,7 @@ const register = (req, res) => {
                         username: params.username,
                         email: params.email,
                         password: hash,
-                        image: file.originalname
+                        image: file.filename
                     })
                     user.save()
                         .then((savedUser) => {

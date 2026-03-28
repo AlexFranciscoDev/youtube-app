@@ -11,7 +11,7 @@ const validate = (params) => {
     // name
     let username = !validator.isEmpty(params.username) &&
     validator.isLength(params.username, {min: 3, max: undefined}) &&
-    validator.isAlphanumeric(params.username, "es-ES");
+    validator.isAlphanumeric(params.username, "es-ES", { ignore: "_" });
     // email
     let email = !validator.isEmpty(params.email) &&
     validator.isEmail(params.email);
