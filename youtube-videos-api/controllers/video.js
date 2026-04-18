@@ -57,7 +57,9 @@ const postVideo = async (req, res) => {
 
 const listVideos = async (req, res) => {
     try {
-        const videos = await Video.find({});
+        const videos = await Video.find({})
+            .populate('category', 'name description')
+            .populate('user', 'username email');
         if (!videos || videos.length === 0) {
             return res.status(404).send({
                 status: 'Error',
