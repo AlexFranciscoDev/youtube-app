@@ -31,6 +31,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/user', require('./routes/user'));
 app.use("/api/video", require("./routes/video"));
 app.use("/api/category", require("./routes/category"));
+app.use("/api/thumbnail", require("./routes/thumbnail"));
 
 // SOLO iniciar servidor si NO estamos en test
 if (process.env.NODE_ENV !== "test") {
