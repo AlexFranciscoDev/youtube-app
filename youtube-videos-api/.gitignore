@@ -1,0 +1,11 @@
+node_modules/
+
+# Uploaded files
+uploads/videos/*
+uploads/others/*
+uploads/categories/*
+
+# Keep folder structure
+!uploads/videos/.gitkeep
+!uploads/others/.gitkeep
+!uploads/categories/.gitkeep
