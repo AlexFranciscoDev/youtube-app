@@ -1,7 +1,11 @@
 const jwt = require('jwt-simple');
 const moment = require('moment');
 
-const secret = 'SECRET_KEY_YOUTUBE_KEY_124221';
+const secret = process.env.JWT_SECRET;
+
+if (!secret && process.env.NODE_ENV !== 'test') {
+    throw new Error('JWT_SECRET environment variable is not set');
+}
 
 const createToken = (user) => {
     const payload = {

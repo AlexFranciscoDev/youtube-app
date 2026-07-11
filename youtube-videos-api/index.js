@@ -12,7 +12,7 @@ if (process.env.NODE_ENV !== "test") {
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -23,9 +23,6 @@ app.use((err, req, res, next) => {
     next();
   }
 });
-
-// Archivos estáticos (imágenes subidas)
-app.use('/uploads', express.static('uploads'));
 
 // Rutas
 app.use('/api/user', require('./routes/user'));
