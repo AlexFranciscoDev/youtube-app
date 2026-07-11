@@ -35,7 +35,7 @@ const postVideo = async (req, res) => {
         url: body.url,
         category: body.category,
         platform: body.platform,
-        image: file.filename
+        image: file.path
     })
 
     video.save()
@@ -291,7 +291,7 @@ const editVideo = async (req, res) => {
     if (req.body.url !== undefined) body.url = req.body.url;
     if (req.body.category !== undefined) body.category = req.body.category;
     if (req.body.platform !== undefined) body.platform = req.body.platform;
-    if (file !== undefined && file !== null) body.image = file.filename;
+    if (file !== undefined && file !== null) body.image = file.path;
     // Check if at least one field is provided to update
     if (Object.keys(body).length === 0) {
         return res.status(400).send({

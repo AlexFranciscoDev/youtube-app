@@ -1,28 +1,36 @@
 const multer = require('multer');
 const path = require('path');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Storage configuration to save the images (multer)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Define where the images are going to be saved
-    // General images
-    let folder = 'uploads/others';
-    // Check the route and save it depending on the url
-    if (req.baseUrl.includes('category')) {
-        folder = 'uploads/categories';
-    } else if (req.baseUrl.includes('video')) {
-        folder = 'uploads/videos';
-    }
+// Route -> folder, shared by both storage backends
+const folderFor = (req) => {
+  if (req.baseUrl.includes('category')) return 'categories';
+  if (req.baseUrl.includes('video')) return 'videos';
+  return 'others';
+};
 
-    cb(null, folder);
-  },
-    // Define the name of the files
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-})
+// Tests run offline and shouldn't hit the real Cloudinary account, so they
+// fall back to local disk storage under uploads/<folder>.
+const storage = process.env.NODE_ENV === 'test'
+  ? multer.diskStorage({
+      destination: (req, file, cb) => cb(null, path.join('uploads', folderFor(req))),
+      filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+    })
+  : (() => {
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+
+      return new CloudinaryStorage({
+        cloudinary,
+        params: (req) => ({ folder: `youtube-app/${folderFor(req)}` }),
+      });
+    })();
 
 // Create Multer instance with the settings made
-const upload = multer({storage});
+const upload = multer({ storage });
 
 module.exports = upload;

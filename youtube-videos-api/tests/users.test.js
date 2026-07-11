@@ -332,7 +332,7 @@ describe('UPDATE /api/user/profile', () => {
         expect(res.body.status).toBe('Success');
         expect(res.body.message).toContain('User updated correctly');
         expect(res.body.user).toHaveProperty('username', 'newUsername');
-        expect(res.body.user).toHaveProperty('image', 'image-test.jpg');
+        expect(res.body.user.image).toMatch(/\.jpg$/);
 
     })
 })

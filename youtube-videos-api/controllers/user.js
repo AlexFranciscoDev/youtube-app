@@ -64,7 +64,7 @@ const register = (req, res) => {
                         username: params.username,
                         email: params.email,
                         password: hash,
-                        image: file.filename
+                        image: file.path
                     })
                     user.save()
                         .then((savedUser) => {
@@ -167,7 +167,7 @@ const update = async (req, res) => {
     const body = req.body;
     let params = {};
     body.username ? params.username = body.username : '';
-    file !== '' ? params.image = file.originalname : '';
+    if (file) params.image = file.path;
     // Check if the username is not already used.
     User.findOne({ username: params.username }).
         exec()

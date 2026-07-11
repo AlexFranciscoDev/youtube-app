@@ -17,7 +17,7 @@ const newCategory = (req, res) => {
     const category = new Category({
         name: body.name,
         description: body.description,
-        image: file.originalname
+        image: file.path
     })
 
     category.save()
@@ -101,7 +101,7 @@ const updateCategory = async (req, res) => {
     const updatedFields = {};
     if (body.name) updatedFields.name = body.name;
     if (body.description) updatedFields.description = body.description;
-    if (file) updatedFields.image = file.originalname;
+    if (file) updatedFields.image = file.path;
 
     // Find category and update data
     await Category.findOneAndUpdate(
