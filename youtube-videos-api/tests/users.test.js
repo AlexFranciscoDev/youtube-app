@@ -84,7 +84,7 @@ describe('POST /api/user/register', () => {
         .attach('image', imageBuffer, 'test-image.jpg')
         expect(res.statusCode).toBe(400);
         expect(res.body.status).toBe('Error');
-        expect(res.body.message).toBe('Validation failed: username, email or password is invalid');
+        expect(res.body.message).toBe('Validation failed: invalid username, email');
     })
 
     test('Check that the user already exists', async () => {
