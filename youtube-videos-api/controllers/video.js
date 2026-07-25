@@ -127,6 +127,8 @@ const getVideosByCategory = async (req, res) => {
     }
 
     await Video.find({ category: category })
+        .populate('user', 'username email')
+        .populate('category', 'name description')
         .then(videosFound => {
 
             if (videosFound.length === 0) {
