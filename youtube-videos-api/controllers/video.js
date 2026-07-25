@@ -91,7 +91,9 @@ const getSingleVideo = async (req, res) => {
     }
 
     try {
-        const video = await Video.findById({ _id: id });
+        const video = await Video.findById(id)
+            .populate('user', 'username email')
+            .populate('category', 'name description');
         if (!video || video.length === 0) {
             return res.status(404).send({
                 status: "Error",
