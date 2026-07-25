@@ -1,5 +1,6 @@
 // Dependencies
 require("dotenv").config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const { conection } = require('./database/conection');
@@ -15,6 +16,7 @@ const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use((err, req, res, next) => {
   if (err) {
