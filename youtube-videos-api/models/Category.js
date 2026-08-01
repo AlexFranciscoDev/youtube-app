@@ -3,10 +3,14 @@ const {Schema, model} = require("mongoose");
 const Video = require('./Video');
 
 const CategorySchema = new Schema({
+    user: {
+        type: Schema.ObjectId,
+        ref: "User",
+        required: true
+    },
     name: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     description: {
         type: String,
@@ -24,6 +28,9 @@ const CategorySchema = new Schema({
         default: Date.now
     }
 })
+
+// A user can't have two categories with the same name, but different users can reuse names
+CategorySchema.index({ user: 1, name: 1 }, { unique: true });
 
 // Middleware to delete on cascade if there's videos in that category
 CategorySchema.pre('findOneAndDelete', async function(next) {

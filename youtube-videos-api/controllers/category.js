@@ -15,6 +15,7 @@ const newCategory = (req, res) => {
         })
     }
     const category = new Category({
+        user: req.user.id,
         name: body.name,
         description: body.description,
         image: file.path
@@ -39,8 +40,8 @@ const newCategory = (req, res) => {
 }
 
 const listCategories = (req, res) => {
-    // Get data
-    Category.find({})
+    // Get only the categories that belong to the logged in user
+    Category.find({ user: req.user.id })
         .then((categories) => {
             return res.status(200).send({
                 status: "Success",
@@ -75,6 +76,13 @@ const getCategoryById = (req, res) => {
                     message: "Category not found"
                 })
             }
+            // Categories are private, only the owner can see them
+            if (category.user != req.user.id) {
+                return res.status(403).send({
+                    status: "Error",
+                    message: "You are not allowed to see this category"
+                })
+            }
             return res.status(200).send({
                 status: "Success",
                 message: "Category found",
@@ -103,51 +111,74 @@ const updateCategory = async (req, res) => {
     if (body.description) updatedFields.description = body.description;
     if (file) updatedFields.image = file.path;
 
-    // Find category and update data
-    await Category.findOneAndUpdate(
-        { _id: id },
-        updatedFields,
-        { new: true }
-    ).then((category) => {
-            return res.status(200).send({
-                status: "Success",
-                message: "Category updated succesfully",
-                category
-            })
-        })
-        .catch((error) => {
-            return res.status(400).send({
+    try {
+        // Check that the category exists and belongs to the logged in user
+        const categoryToUpdate = await Category.findById(id);
+        if (!categoryToUpdate) {
+            return res.status(404).send({
                 status: "Error",
-                error: error
+                message: "Category not found"
             })
+        }
+        if (categoryToUpdate.user != req.user.id) {
+            return res.status(403).send({
+                status: "Error",
+                message: "You are not allowed to edit this category"
+            })
+        }
+
+        // Find category and update data
+        const category = await Category.findOneAndUpdate(
+            { _id: id },
+            updatedFields,
+            { new: true }
+        );
+        return res.status(200).send({
+            status: "Success",
+            message: "Category updated succesfully",
+            category
         })
+    } catch (error) {
+        return res.status(400).send({
+            status: "Error",
+            error: error
+        })
+    }
 }
 
-const deleteCategory = (req, res) => {
+const deleteCategory = async (req, res) => {
     // Get category id
     const id = req.params.id;
-    // Delete category by id
-    Category.findOneAndDelete({_id: id})
-    .then((categoryDeleted) => {
-        console.log(categoryDeleted);
-        if (!categoryDeleted) {
+
+    try {
+        // Check that the category exists and belongs to the logged in user
+        const category = await Category.findById(id);
+        if (!category) {
             return res.status(400).send({
                 status: 'Error',
                 message: 'Category not found'
             })
         }
+        if (category.user != req.user.id) {
+            return res.status(403).send({
+                status: 'Error',
+                message: 'You are not allowed to delete this category'
+            })
+        }
+
+        // Delete category by id
+        const categoryDeleted = await Category.findOneAndDelete({ _id: id });
         return res.status(200).send({
             status: 'Success',
             message: 'Deleting category',
             categoryDeleted
         })
-    })
-    .catch((error) => {
+    } catch (error) {
         return res.status(400).send({
             status: 'Error',
             error: error.message
         })
-    })
+    }
 }
 
 module.exports = {

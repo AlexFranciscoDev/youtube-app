@@ -26,6 +26,14 @@ const postVideo = async (req, res) => {
             message: "Category not found"
         })
     }
+    // Check that the category belongs to the user uploading the video
+    const category = await Category.findById(body.category);
+    if (!category || category.user != userId) {
+        return res.status(400).send({
+            status: "Error",
+            message: "Category not found"
+        })
+    }
 
     // Create object with all the data
     const video = new Video({
@@ -311,9 +319,25 @@ const editVideo = async (req, res) => {
             message: 'The id provided is not valid',
         })
     }
+    // If a category is being changed, check that it belongs to the logged in user
+    if (body.category !== undefined) {
+        if (!ObjectId.isValid(body.category)) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'Category not found'
+            })
+        }
+        const category = await Category.findById(body.category);
+        if (!category || category.user != userId) {
+            return res.status(400).send({
+                status: 'Error',
+                message: 'Category not found'
+            })
+        }
+    }
     // Check if the video exists
     const videoToUpdate = await Video.findById(id);
-    
+
     try {
         if (!videoToUpdate || videoToUpdate.length === 0) {
             return res.status(404).send({
