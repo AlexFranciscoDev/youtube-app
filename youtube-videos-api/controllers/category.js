@@ -30,6 +30,13 @@ const newCategory = (req, res) => {
             })
         })
         .catch((error) => {
+            // Duplicate key error: this user already has a category with that name
+            if (error.code === 11000) {
+                return res.status(400).send({
+                    status: 'Error',
+                    message: 'You already have a category with that name'
+                })
+            }
             return res.status(400).send({
                 status: 'Error',
                 message: 'An error ocurred creating the new category',
@@ -139,6 +146,13 @@ const updateCategory = async (req, res) => {
             category
         })
     } catch (error) {
+        // Duplicate key error: this user already has a category with that name
+        if (error.code === 11000) {
+            return res.status(400).send({
+                status: "Error",
+                message: "You already have a category with that name"
+            })
+        }
         return res.status(400).send({
             status: "Error",
             error: error
